@@ -4,6 +4,12 @@ $session_duration = 4 * 60 * 60;
 if(isset($_SESSION['last_activity']) && (time()-$_SESSION['last_activity'])>$session_duration){
     session_unset(); session_destroy();
 }
+// Modo desarrollo: si no hay sesión GLPI y es localhost, crear sesión temporal
+if(!isset($_SESSION['nagsa_user']) && in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost:8080','localhost','127.0.0.1:8080','127.0.0.1'])){
+    $_SESSION['nagsa_user'] = 'dev_local';
+    $_SESSION['nagsa_name'] = 'Desarrollo Local';
+    $_SESSION['admin_ok']   = true;
+}
 if(!isset($_SESSION['nagsa_user'])){ header('Location: ../../index.php'); exit; }
 $_SESSION['last_activity'] = time();
 require_once __DIR__ . '/../../config/config.php';

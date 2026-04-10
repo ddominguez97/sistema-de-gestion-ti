@@ -87,7 +87,7 @@ define('MODULE_ETIQUETAS_URL', BASE_URL . '/modules/etiquetas');
 define('MODULE_ACTAS_URL',     BASE_URL . '/modules/actas');
 define('MODULE_REPORTES_URL',  BASE_URL . '/modules/reportes');
 
-// ── Módulos — 3 estados: activo | pruebas | mantenimiento ───────────────────
+// ── Módulos — 3 estados: activo | pruebas | deshabilitado ───────────────────
 function getEstadoModulo($modulo) {
     global $cfg;
     return $cfg['modulos'][$modulo] ?? 'activo';
@@ -96,25 +96,23 @@ function getEstadoModulo($modulo) {
 function checkModulo($modulo) {
     global $cfg;
     $estado = getEstadoModulo($modulo);
-    if($estado === 'activo') return; // OK, continuar
+    if($estado === 'activo') return;
 
     $proto     = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $base      = rtrim(dirname(dirname(dirname($_SERVER['SCRIPT_NAME']))), '/');
     $dashboard = $proto . '://' . $_SERVER['HTTP_HOST'] . $base . '/index.php';
 
-    // Modo pruebas: solo el admin puede acceder
+    // Pruebas: solo admin/desarrollador puede acceder
     if($estado === 'pruebas') {
-        session_start();
-        if(!empty($_SESSION['admin_ok'])) return; // Admin puede pasar
-        // Usuario normal ve aviso de pruebas
-        $icono = '🧪';
-        $titulo = 'Módulo en modo pruebas';
-        $mensaje = 'Este módulo está siendo actualizado y probado.<br>Estará disponible próximamente.';
+        if(!empty($_SESSION['admin_ok'])) return;
+        $icono   = '🧪';
+        $titulo  = 'Módulo en pruebas';
+        $mensaje = 'Este módulo está en desarrollo y solo es accesible para el equipo de TI.<br>Pronto estará disponible para todos.';
     } else {
-        // Mantenimiento: nadie pasa
-        $icono = '🔧';
-        $titulo = 'Módulo en mantenimiento';
-        $mensaje = 'Este módulo está temporalmente desactivado.<br>Por favor intente más tarde o contacte al administrador del sistema.';
+        // Deshabilitado: nadie pasa
+        $icono   = '🔧';
+        $titulo  = 'Estamos trabajando en esto';
+        $mensaje = 'Este módulo se encuentra en construcción.<br>Estamos trabajando para ofrecerte nuevas funcionalidades.<br><br>Gracias por tu paciencia.';
     }
 
     header('Content-Type: text/html; charset=utf-8');
@@ -131,7 +129,7 @@ function checkModulo($modulo) {
     echo '<div class="icon">' . $icono . '</div>';
     echo '<div class="title">' . $titulo . '</div>';
     echo '<div class="msg">' . $mensaje . '</div>';
-    echo '<a href="' . $dashboard . '" class="btn">← Volver al Dashboard</a>';
+    echo '<a href="' . $dashboard . '" class="btn">&larr; Volver al Dashboard</a>';
     echo '</div></body></html>';
     exit;
 }

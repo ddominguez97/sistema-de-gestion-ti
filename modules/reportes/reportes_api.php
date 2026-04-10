@@ -3,12 +3,36 @@ header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../../config/config.php';
 
 session_start();
+// Modo desarrollo: sesión temporal en localhost
+if(!isset($_SESSION['nagsa_user']) && in_array($_SERVER['HTTP_HOST'] ?? '', ['localhost:8080','localhost','127.0.0.1:8080','127.0.0.1'])){
+    $_SESSION['nagsa_user'] = 'dev_local';
+    $_SESSION['nagsa_name'] = 'Desarrollo Local';
+}
 if (!isset($_SESSION['nagsa_user'])) {
     http_response_code(401);
     die(json_encode(['error' => 'No autorizado']));
 }
 
-$db     = getLocalDB();
+// ── Almacenamiento en archivo JSON (desarrollo) ────────────────────────────
+// En producción se migra a SQL Server Express via getLocalDB()
+define('DATA_FILE', ROOT_PATH . '/data/actas.json');
+
+function loadData() {
+    if (!file_exists(DATA_FILE)) {
+        return ['next_id' => 1, 'actas' => []];
+    }
+    $raw = file_get_contents(DATA_FILE);
+    $data = json_decode($raw, true);
+    if (!$data || !isset($data['actas'])) {
+        return ['next_id' => 1, 'actas' => []];
+    }
+    return $data;
+}
+
+function saveData($data) {
+    file_put_contents(DATA_FILE, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+}
+
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 // ── Guardar acta nueva ──────────────────────────────────────────────────────
@@ -19,92 +43,105 @@ if ($action === 'guardar') {
         die(json_encode(['error' => 'Datos inválidos']));
     }
 
-    $numero = $input['numero'] ?? ('ACT-' . substr(time(), -6));
-    $tipo   = $input['tipo']   ?? 'entrega';
+    $data   = loadData();
+    $id     = $data['next_id'];
+    $numero = $input['numero'] ?? ('ACT-' . str_pad($id, 3, '0', STR_PAD_LEFT));
+    $now    = date('Y-m-d H:i:s');
 
-    $sql = "INSERT INTO actas (
-        numero, tipo, fecha, lugar,
-        entregado_por, entregado_cargo, recibido_por, recibido_cargo,
-        autorizado_por, autorizado_cargo, motivo, destino, retira_persona, retira_cargo,
-        observaciones, equipos, total_equipos,
-        estado, created_by
-    ) VALUES (
-        :numero, :tipo, :fecha, :lugar,
-        :entregado_por, :entregado_cargo, :recibido_por, :recibido_cargo,
-        :autorizado_por, :autorizado_cargo, :motivo, :destino, :retira_persona, :retira_cargo,
-        :observaciones, :equipos, :total_equipos,
-        'pendiente', :created_by
-    )";
+    $acta = [
+        'id'                     => $id,
+        'numero'                 => $numero,
+        'tipo'                   => $input['tipo'] ?? 'entrega',
+        'fecha'                  => $input['fecha'] ?? date('Y-m-d'),
+        'lugar'                  => $input['lugar'] ?? null,
+        'entregado_por'          => $input['entregado_por'] ?? null,
+        'entregado_cargo'        => $input['entregado_cargo'] ?? null,
+        'recibido_por'           => $input['recibido_por'] ?? null,
+        'recibido_cargo'         => $input['recibido_cargo'] ?? null,
+        'autorizado_por'         => $input['autorizado_por'] ?? null,
+        'autorizado_cargo'       => $input['autorizado_cargo'] ?? null,
+        'motivo'                 => $input['motivo'] ?? null,
+        'destino'                => $input['destino'] ?? null,
+        'retira_persona'         => $input['retira_persona'] ?? null,
+        'retira_cargo'           => $input['retira_cargo'] ?? null,
+        'observaciones'          => $input['observaciones'] ?? null,
+        'equipos'                => $input['equipos'] ?? [],
+        'total_equipos'          => count($input['equipos'] ?? []),
+        'estado'                 => 'pendiente',
+        'aceptada_por'           => null,
+        'aceptada_fecha'         => null,
+        'aceptada_observaciones' => null,
+        'firma_digital'          => null,
+        'created_by'             => $_SESSION['nagsa_user'],
+        'created_at'             => $now,
+        'updated_at'             => $now,
+    ];
 
-    $stmt = $db->prepare($sql);
-    $stmt->execute([
-        ':numero'           => $numero,
-        ':tipo'             => $tipo,
-        ':fecha'            => $input['fecha'] ?? date('Y-m-d'),
-        ':lugar'            => $input['lugar'] ?? null,
-        ':entregado_por'    => $input['entregado_por'] ?? null,
-        ':entregado_cargo'  => $input['entregado_cargo'] ?? null,
-        ':recibido_por'     => $input['recibido_por'] ?? null,
-        ':recibido_cargo'   => $input['recibido_cargo'] ?? null,
-        ':autorizado_por'   => $input['autorizado_por'] ?? null,
-        ':autorizado_cargo' => $input['autorizado_cargo'] ?? null,
-        ':motivo'           => $input['motivo'] ?? null,
-        ':destino'          => $input['destino'] ?? null,
-        ':retira_persona'   => $input['retira_persona'] ?? null,
-        ':retira_cargo'     => $input['retira_cargo'] ?? null,
-        ':observaciones'    => $input['observaciones'] ?? null,
-        ':equipos'          => json_encode($input['equipos'] ?? [], JSON_UNESCAPED_UNICODE),
-        ':total_equipos'    => count($input['equipos'] ?? []),
-        ':created_by'       => $_SESSION['nagsa_user'],
-    ]);
+    $data['actas'][] = $acta;
+    $data['next_id'] = $id + 1;
+    saveData($data);
 
-    $id = $db->lastInsertId();
     echo json_encode(['ok' => true, 'id' => $id, 'numero' => $numero]);
     exit;
 }
 
 // ── Listar actas con filtros ────────────────────────────────────────────────
 if ($action === 'listar') {
-    $where  = [];
-    $params = [];
+    $data  = loadData();
+    $actas = $data['actas'];
 
+    // Filtros
     if (!empty($_GET['tipo'])) {
-        $where[]       = 'tipo = :tipo';
-        $params[':tipo'] = $_GET['tipo'];
+        $tipo = $_GET['tipo'];
+        $actas = array_filter($actas, fn($a) => $a['tipo'] === $tipo);
     }
     if (!empty($_GET['estado'])) {
-        $where[]         = 'estado = :estado';
-        $params[':estado'] = $_GET['estado'];
+        $estado = $_GET['estado'];
+        $actas = array_filter($actas, fn($a) => $a['estado'] === $estado);
     }
     if (!empty($_GET['desde'])) {
-        $where[]         = 'fecha >= :desde';
-        $params[':desde'] = $_GET['desde'];
+        $desde = $_GET['desde'];
+        $actas = array_filter($actas, fn($a) => $a['fecha'] >= $desde);
     }
     if (!empty($_GET['hasta'])) {
-        $where[]         = 'fecha <= :hasta';
-        $params[':hasta'] = $_GET['hasta'];
+        $hasta = $_GET['hasta'];
+        $actas = array_filter($actas, fn($a) => $a['fecha'] <= $hasta);
     }
     if (!empty($_GET['buscar'])) {
-        $where[] = '(numero LIKE :q1 OR entregado_por LIKE :q2 OR recibido_por LIKE :q3 OR autorizado_por LIKE :q4 OR retira_persona LIKE :q5 OR created_by LIKE :q6)';
-        $q = '%' . $_GET['buscar'] . '%';
-        $params[':q1'] = $q;
-        $params[':q2'] = $q;
-        $params[':q3'] = $q;
-        $params[':q4'] = $q;
-        $params[':q5'] = $q;
-        $params[':q6'] = $q;
+        $q = mb_strtolower($_GET['buscar']);
+        $actas = array_filter($actas, fn($a) =>
+            str_contains(mb_strtolower($a['numero'] ?? ''), $q) ||
+            str_contains(mb_strtolower($a['entregado_por'] ?? ''), $q) ||
+            str_contains(mb_strtolower($a['recibido_por'] ?? ''), $q) ||
+            str_contains(mb_strtolower($a['autorizado_por'] ?? ''), $q) ||
+            str_contains(mb_strtolower($a['retira_persona'] ?? ''), $q) ||
+            str_contains(mb_strtolower($a['created_by'] ?? ''), $q)
+        );
     }
 
-    $sql = "SELECT id, numero, tipo, fecha, lugar,
-                   entregado_por, recibido_por, autorizado_por, retira_persona,
-                   total_equipos, estado, created_by, created_at
-            FROM actas";
-    if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-    $sql .= ' ORDER BY created_at DESC';
+    // Ordenar por created_at DESC
+    usort($actas, fn($a, $b) => strcmp($b['created_at'], $a['created_at']));
 
-    $stmt = $db->prepare($sql);
-    $stmt->execute($params);
-    echo json_encode($stmt->fetchAll(), JSON_UNESCAPED_UNICODE);
+    // Devolver sin el campo equipos (lista ligera)
+    $result = array_map(function ($a) {
+        return [
+            'id'              => $a['id'],
+            'numero'          => $a['numero'],
+            'tipo'            => $a['tipo'],
+            'fecha'           => $a['fecha'],
+            'lugar'           => $a['lugar'],
+            'entregado_por'   => $a['entregado_por'],
+            'recibido_por'    => $a['recibido_por'],
+            'autorizado_por'  => $a['autorizado_por'],
+            'retira_persona'  => $a['retira_persona'],
+            'total_equipos'   => $a['total_equipos'],
+            'estado'          => $a['estado'],
+            'created_by'      => $a['created_by'],
+            'created_at'      => $a['created_at'],
+        ];
+    }, $actas);
+
+    echo json_encode(array_values($result), JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -115,14 +152,18 @@ if ($action === 'detalle') {
         http_response_code(400);
         die(json_encode(['error' => 'ID requerido']));
     }
-    $stmt = $db->prepare("SELECT * FROM actas WHERE id = :id");
-    $stmt->execute([':id' => $id]);
-    $acta = $stmt->fetch();
+
+    $data = loadData();
+    $acta = null;
+    foreach ($data['actas'] as $a) {
+        if ($a['id'] === $id) { $acta = $a; break; }
+    }
+
     if (!$acta) {
         http_response_code(404);
         die(json_encode(['error' => 'Acta no encontrada']));
     }
-    $acta['equipos'] = json_decode($acta['equipos'], true) ?: [];
+
     echo json_encode($acta, JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -141,62 +182,87 @@ if ($action === 'resguardo') {
         die(json_encode(['error' => 'Estado no válido']));
     }
 
-    $sql = "UPDATE actas SET
-                estado = :estado,
-                aceptada_por = :aceptada_por,
-                aceptada_fecha = GETDATE(),
-                aceptada_observaciones = :obs,
-                firma_digital = :firma,
-                updated_at = GETDATE()
-            WHERE id = :id AND estado = 'pendiente'";
+    $data  = loadData();
+    $found = false;
+    $now   = date('Y-m-d H:i:s');
 
-    $stmt = $db->prepare($sql);
-    $stmt->execute([
-        ':estado'      => $input['estado'],
-        ':aceptada_por'=> $input['aceptada_por'] ?? $_SESSION['nagsa_user'],
-        ':obs'         => $input['observaciones'] ?? null,
-        ':firma'       => $input['firma'] ?? null,
-        ':id'          => (int)$input['id'],
-    ]);
+    foreach ($data['actas'] as &$acta) {
+        if ($acta['id'] === (int)$input['id'] && $acta['estado'] === 'pendiente') {
+            $acta['estado']                 = $input['estado'];
+            $acta['aceptada_por']           = $input['aceptada_por'] ?? $_SESSION['nagsa_user'];
+            $acta['aceptada_fecha']         = $now;
+            $acta['aceptada_observaciones'] = $input['observaciones'] ?? null;
+            $acta['firma_digital']          = $input['firma'] ?? null;
+            $acta['updated_at']             = $now;
+            $found = true;
+            break;
+        }
+    }
+    unset($acta);
 
-    if ($stmt->rowCount() === 0) {
+    if (!$found) {
         http_response_code(409);
         die(json_encode(['error' => 'El acta ya fue procesada o no existe']));
     }
 
+    saveData($data);
     echo json_encode(['ok' => true]);
     exit;
 }
 
 // ── Estadísticas ────────────────────────────────────────────────────────────
 if ($action === 'estadisticas') {
+    $data  = loadData();
+    $actas = $data['actas'];
     $stats = [];
 
     // Totales por tipo
-    $stmt = $db->query("SELECT tipo, COUNT(*) as total FROM actas GROUP BY tipo");
-    $stats['por_tipo'] = $stmt->fetchAll();
+    $porTipo = [];
+    foreach ($actas as $a) {
+        $t = $a['tipo'];
+        $porTipo[$t] = ($porTipo[$t] ?? 0) + 1;
+    }
+    $stats['por_tipo'] = array_map(fn($tipo, $total) => ['tipo' => $tipo, 'total' => $total], array_keys($porTipo), array_values($porTipo));
 
     // Totales por estado
-    $stmt = $db->query("SELECT estado, COUNT(*) as total FROM actas GROUP BY estado");
-    $stats['por_estado'] = $stmt->fetchAll();
+    $porEstado = [];
+    foreach ($actas as $a) {
+        $e = $a['estado'];
+        $porEstado[$e] = ($porEstado[$e] ?? 0) + 1;
+    }
+    $stats['por_estado'] = array_map(fn($estado, $total) => ['estado' => $estado, 'total' => $total], array_keys($porEstado), array_values($porEstado));
 
     // Ultimos 6 meses
-    $stmt = $db->query("
-        SELECT FORMAT(fecha, 'yyyy-MM') as mes, tipo, COUNT(*) as total
-        FROM actas
-        WHERE fecha >= DATEADD(MONTH, -6, GETDATE())
-        GROUP BY FORMAT(fecha, 'yyyy-MM'), tipo
-        ORDER BY mes
-    ");
-    $stats['por_mes'] = $stmt->fetchAll();
+    $limite = date('Y-m', strtotime('-6 months'));
+    $porMes = [];
+    foreach ($actas as $a) {
+        $mes = substr($a['fecha'], 0, 7); // yyyy-MM
+        if ($mes < $limite) continue;
+        $key = $mes . '|' . $a['tipo'];
+        $porMes[$key] = ($porMes[$key] ?? 0) + 1;
+    }
+    ksort($porMes);
+    $stats['por_mes'] = array_map(function ($key, $total) {
+        [$mes, $tipo] = explode('|', $key);
+        return ['mes' => $mes, 'tipo' => $tipo, 'total' => $total];
+    }, array_keys($porMes), array_values($porMes));
 
     // Total general
-    $stmt = $db->query("SELECT COUNT(*) as total, SUM(total_equipos) as equipos FROM actas");
-    $stats['general'] = $stmt->fetch();
+    $totalEquipos = array_sum(array_column($actas, 'total_equipos'));
+    $stats['general'] = ['total' => count($actas), 'equipos' => $totalEquipos];
 
     // Top creadores
-    $stmt = $db->query("SELECT TOP 5 created_by, COUNT(*) as total FROM actas GROUP BY created_by ORDER BY total DESC");
-    $stats['top_usuarios'] = $stmt->fetchAll();
+    $porUsuario = [];
+    foreach ($actas as $a) {
+        $u = $a['created_by'];
+        $porUsuario[$u] = ($porUsuario[$u] ?? 0) + 1;
+    }
+    arsort($porUsuario);
+    $stats['top_usuarios'] = array_map(
+        fn($user, $total) => ['created_by' => $user, 'total' => $total],
+        array_keys(array_slice($porUsuario, 0, 5, true)),
+        array_values(array_slice($porUsuario, 0, 5, true))
+    );
 
     echo json_encode($stats, JSON_UNESCAPED_UNICODE);
     exit;

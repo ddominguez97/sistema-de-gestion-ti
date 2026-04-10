@@ -36,7 +36,7 @@
         "etiquetas": "activo",
         "actas": "activo",
         "reportes": "pruebas",
-        "inversiones": "mantenimiento",
-        "permisos": "mantenimiento"
+        "inversiones": "deshabilitado",
+        "permisos": "deshabilitado"
     }
 }

@@ -9,15 +9,15 @@ if(isset($_GET['logout'])){ session_unset(); session_destroy(); header('Location
 
 require_once __DIR__.'/config/config.php';
 $branding = getBranding();
-$modulos = $cfg['modulos'] ?? ['etiquetas'=>'activo','actas'=>'activo','reportes'=>'mantenimiento','inversiones'=>'mantenimiento','permisos'=>'mantenimiento'];
-function estadoMod($m) { global $modulos; return $modulos[$m] ?? 'mantenimiento'; }
+$modulos = $cfg['modulos'] ?? ['etiquetas'=>'activo','actas'=>'activo','reportes'=>'deshabilitado','inversiones'=>'deshabilitado','permisos'=>'deshabilitado'];
+function estadoMod($m) { global $modulos; return $modulos[$m] ?? 'deshabilitado'; }
 function badgeMod($m) {
     $e = estadoMod($m);
     if($e==='activo')        return ['badge-active','Activo'];
-    if($e==='pruebas')       return ['badge-beta','Pruebas'];
-    return ['badge-maint','Mantenimiento'];
+    if($e==='pruebas')       return ['badge-beta','En Pruebas'];
+    return ['badge-disabled','Deshabilitado'];
 }
-function cardMod($m) { return estadoMod($m)==='mantenimiento' ? 'disabled' : ''; }
+function cardMod($m) { return estadoMod($m)==='deshabilitado' ? 'disabled' : ''; }
 $login_error='';
 if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['username'])){
     $cfg_file = __DIR__.'/sistemas_settings.json'; // en raíz
@@ -118,8 +118,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 .module-card .card-badge{position:absolute;top:14px;right:14px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;}
 .badge-active{background:rgba(40,167,69,0.15);color:#1e7e34;border:1px solid rgba(40,167,69,0.4);font-weight:800;}
 .badge-beta{background:rgba(255,193,7,0.2);color:#d39e00;border:1px solid rgba(255,193,7,0.5);font-weight:800;}
-.badge-soon{background:rgba(108,117,125,0.15);color:#495057;border:1px solid rgba(108,117,125,0.4);font-weight:800;}
-.badge-maint{background:rgba(220,53,69,0.12);color:#a71d2a;border:1px solid rgba(220,53,69,0.4);font-weight:800;}
+.badge-disabled{background:rgba(108,117,125,0.15);color:#6c757d;border:1px solid rgba(108,117,125,0.4);font-weight:800;}
 .module-card .card-footer{font-size:10px;color:var(--text-muted);margin-top:auto;padding-top:10px;border-top:1px solid var(--border);}
 .section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--color-principal);margin:32px 0 14px;}
 .section-label:first-child{margin-top:0;}
@@ -149,25 +148,25 @@ $todosModulos = [
   'etiquetas'  => ['url'=>'modules/etiquetas/etiquetas_inventario.php','icono'=>'🏷️','titulo'=>'Etiquetas de Activos','desc'=>'Genera e imprime etiquetas con código QR para todos los activos registrados en GLPI.','footer'=>'Computadoras · Monitores · Impresoras · Periféricos · más','link'=>true],
   'actas'      => ['url'=>'modules/actas/actas.php','icono'=>'📋','titulo'=>'Actas de Equipos','desc'=>'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.','footer'=>'Entrega · Salida · Impresión / PDF','link'=>true],
   'reportes'   => ['url'=>'modules/reportes/reportes.php','icono'=>'📊','titulo'=>'Reportes y Estadísticas','desc'=>'Registro de actas de entrega y salida, aceptación/resguardo, estadísticas por período.','footer'=>'Registro actas · Aceptación / Resguardo · Estadísticas','link'=>true],
-  'inversiones'=> ['url'=>'#','icono'=>'💰','titulo'=>'Formato de Inversión','desc'=>'Solicitudes de compra, inversión por empresa y seguimiento de adquisiciones.','footer'=>'Compras · Inversión · Por entidad','link'=>false],
-  'permisos'   => ['url'=>'#','icono'=>'🔔','titulo'=>'Permisos y Notificaciones','desc'=>'Permisos por perfil de GLPI para cada módulo, notificaciones por correo y alertas.','footer'=>'Permisos · Notificaciones · Perfiles GLPI','link'=>false],
+  'inversiones'=> ['url'=>'modules/proximamente.php?m=inversiones','icono'=>'💰','titulo'=>'Formato de Inversión','desc'=>'Solicitudes de compra, inversión por empresa y seguimiento de adquisiciones.','footer'=>'Compras · Inversión · Por entidad','link'=>true],
+  'permisos'   => ['url'=>'modules/proximamente.php?m=permisos','icono'=>'🔔','titulo'=>'Permisos y Notificaciones','desc'=>'Permisos por perfil de GLPI para cada módulo, notificaciones por correo y alertas.','footer'=>'Permisos · Notificaciones · Perfiles GLPI','link'=>true],
 ];
 
 // Agrupar por estado
-$grActivo = $grPruebas = $grMant = [];
+$grActivo = $grPruebas = $grDeshabilitado = [];
 foreach($todosModulos as $key=>$mod) {
   $estado = estadoMod($key);
-  if($estado==='activo')        $grActivo[$key]  = $mod;
-  elseif($estado==='pruebas')   $grPruebas[$key] = $mod;
-  else                          $grMant[$key]    = $mod;
+  if($estado==='activo')           $grActivo[$key]       = $mod;
+  elseif($estado==='pruebas')      $grPruebas[$key]      = $mod;
+  else                             $grDeshabilitado[$key] = $mod;
 }
 
 function renderCard($key, $mod, $estado) {
-  $badges = ['activo'=>['badge-active','Activo'],'pruebas'=>['badge-beta','Pruebas'],'mantenimiento'=>['badge-maint','Mantenimiento']];
-  $bc = $badges[$estado][0];
-  $bl = $badges[$estado][1];
-  $disabled = $estado==='mantenimiento' ? 'disabled' : '';
-  $isLink = $mod['link'] && $estado==='activo';
+  $badges = ['activo'=>['badge-active','Activo'],'pruebas'=>['badge-beta','En Pruebas'],'deshabilitado'=>['badge-disabled','Deshabilitado']];
+  $bc = $badges[$estado][0] ?? 'badge-disabled';
+  $bl = $badges[$estado][1] ?? 'Deshabilitado';
+  $disabled = $estado==='deshabilitado' ? 'disabled' : '';
+  $isLink = $mod['link'];
   $url = $mod['url'];
   if($isLink) echo '<a href="'.$url.'" class="module-card '.$disabled.'">';
   else        echo '<div class="module-card '.$disabled.'">';
@@ -189,16 +188,16 @@ function renderCard($key, $mod, $estado) {
 <?php endif; ?>
 
 <?php if(!empty($grPruebas)): ?>
-  <div class="section-label">En pruebas</div>
+  <div class="section-label">En desarrollo</div>
   <div class="modules-grid">
     <?php foreach($grPruebas as $key=>$mod) renderCard($key,$mod,'pruebas'); ?>
   </div>
 <?php endif; ?>
 
-<?php if(!empty($grMant)): ?>
-  <div class="section-label">Próximamente</div>
+<?php if(!empty($grDeshabilitado)): ?>
+  <div class="section-label">Deshabilitados</div>
   <div class="modules-grid">
-    <?php foreach($grMant as $key=>$mod) renderCard($key,$mod,'mantenimiento'); ?>
+    <?php foreach($grDeshabilitado as $key=>$mod) renderCard($key,$mod,'deshabilitado'); ?>
   </div>
 <?php endif; ?>
 </div>
