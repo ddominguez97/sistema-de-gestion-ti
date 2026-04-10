@@ -452,6 +452,51 @@ function generarActa(){
   <div class="acta-footer">${nombre} &middot; Gesti&oacute;n de Activos TI &middot; ${window.NAGSA_URL||'glpi.nagsa.com.ec'} &middot; Generado el ${new Date().toLocaleString('es-EC')}</div>`;
   document.getElementById('acta-preview').style.display='block';
   document.getElementById('acta-preview').scrollIntoView({behavior:'smooth'});
+
+  // Guardar acta en SQL Express
+  const datosGuardar={
+    numero: num,
+    tipo: tipoActa,
+    fecha: fecha,
+    lugar: lugarNombre,
+    equipos: equipos,
+    observaciones: obsText
+  };
+  if(tipoActa==='entrega'){
+    datosGuardar.entregado_por=document.getElementById('search-entrega').value.trim();
+    datosGuardar.entregado_cargo=document.getElementById('acta-entrega-cargo').value||'---';
+    datosGuardar.recibido_por=document.getElementById('search-recibe').value.trim();
+    datosGuardar.recibido_cargo=document.getElementById('acta-recibe-cargo').value||'---';
+  } else {
+    datosGuardar.autorizado_por=document.getElementById('search-autoriza').value.trim();
+    datosGuardar.autorizado_cargo=document.getElementById('acta-autoriza-cargo').value||'---';
+    datosGuardar.motivo=document.getElementById('acta-motivo').value||'---';
+    datosGuardar.destino=document.getElementById('search-destino').value.trim()||'---';
+    datosGuardar.retira_persona=document.getElementById('search-retira').value.trim()||'---';
+    datosGuardar.retira_cargo=document.getElementById('acta-retira-cargo').value||'---';
+  }
+  guardarActa(datosGuardar);
+}
+
+async function guardarActa(datosActa){
+  try{
+    const resp=await fetch('../reportes/reportes_api.php?action=guardar',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(datosActa)
+    });
+    const data=await resp.json();
+    if(data.ok){
+      console.log('Acta guardada:',data.numero);
+      return data;
+    } else {
+      console.warn('Error al guardar acta:',data.error);
+      return null;
+    }
+  }catch(e){
+    console.warn('No se pudo guardar el acta:',e);
+    return null;
+  }
 }
 
 function imprimirActa(){

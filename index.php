@@ -148,7 +148,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 $todosModulos = [
   'etiquetas'  => ['url'=>'modules/etiquetas/etiquetas_inventario.php','icono'=>'🏷️','titulo'=>'Etiquetas de Activos','desc'=>'Genera e imprime etiquetas con código QR para todos los activos registrados en GLPI.','footer'=>'Computadoras · Monitores · Impresoras · Periféricos · más','link'=>true],
   'actas'      => ['url'=>'modules/actas/actas.php','icono'=>'📋','titulo'=>'Actas de Equipos','desc'=>'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.','footer'=>'Entrega · Salida · Impresión / PDF','link'=>true],
-  'reportes'   => ['url'=>'#','icono'=>'📊','titulo'=>'Reportes y Estadísticas','desc'=>'Historial de actas, equipos en reparación, estadísticas por entidad y período.','footer'=>'Historial actas · Equipos dañados · Inversión por empresa','link'=>false],
+  'reportes'   => ['url'=>'modules/reportes/reportes.php','icono'=>'📊','titulo'=>'Reportes y Estadísticas','desc'=>'Registro de actas de entrega y salida, aceptación/resguardo, estadísticas por período.','footer'=>'Registro actas · Aceptación / Resguardo · Estadísticas','link'=>true],
   'inversiones'=> ['url'=>'#','icono'=>'💰','titulo'=>'Formato de Inversión','desc'=>'Solicitudes de compra, inversión por empresa y seguimiento de adquisiciones.','footer'=>'Compras · Inversión · Por entidad','link'=>false],
   'permisos'   => ['url'=>'#','icono'=>'🔔','titulo'=>'Permisos y Notificaciones','desc'=>'Permisos por perfil de GLPI para cada módulo, notificaciones por correo y alertas.','footer'=>'Permisos · Notificaciones · Perfiles GLPI','link'=>false],
 ];

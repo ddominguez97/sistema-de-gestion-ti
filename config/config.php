@@ -41,6 +41,41 @@ function getDB() {
     return $pdo;
 }
 
+// ── Conexión PDO — SQL Server Express (BD local del sistema) ────────────────
+function getLocalDB() {
+    global $cfg;
+    static $pdo = null;
+    if ($pdo) return $pdo;
+
+    $local = $cfg['local_db'] ?? [];
+    $server  = $local['server']   ?? 'localhost\SQLEXPRESS';
+    $dbname  = $local['database'] ?? 'SistemaNG';
+    $user    = $local['user']     ?? '';
+    $pass    = $local['password'] ?? '';
+
+    try {
+        if ($user) {
+            // SQL Server Authentication
+            $dsn = "sqlsrv:Server={$server};Database={$dbname}";
+            $pdo = new PDO($dsn, $user, $pass, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+        } else {
+            // Windows Authentication
+            $dsn = "sqlsrv:Server={$server};Database={$dbname}";
+            $pdo = new PDO($dsn, null, null, [
+                PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            ]);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        die(json_encode(['error' => 'Error SQL Express: ' . $e->getMessage()]));
+    }
+    return $pdo;
+}
+
 // ── URL base para módulos (relativa al navegador) ────────────────────────────
 // Detecta automáticamente la URL base del sistema
 define('BASE_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
@@ -50,6 +85,7 @@ define('BASE_URL', (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'ht
 // ── Constantes de módulos ────────────────────────────────────────────────────
 define('MODULE_ETIQUETAS_URL', BASE_URL . '/modules/etiquetas');
 define('MODULE_ACTAS_URL',     BASE_URL . '/modules/actas');
+define('MODULE_REPORTES_URL',  BASE_URL . '/modules/reportes');
 
 // ── Módulos — 3 estados: activo | pruebas | mantenimiento ───────────────────
 function getEstadoModulo($modulo) {

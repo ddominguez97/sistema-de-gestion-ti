@@ -118,6 +118,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $msg = '✅ Estado de módulos guardado.'; $msg_type = 'ok';
     }
 
+    if (isset($_POST['save_localdb']) && !empty($_SESSION['admin_ok'])) {
+        $f_cfg = __DIR__ . '/sistemas_settings.json';
+        $cfg_actual = file_exists($f_cfg) ? json_decode(file_get_contents($f_cfg), true) : [];
+        $cfg_actual['local_db'] = [
+            'server'   => trim($_POST['local_server'] ?? 'localhost\SQLEXPRESS'),
+            'database' => trim($_POST['local_database'] ?? 'SistemaNG'),
+            'user'     => trim($_POST['local_user'] ?? ''),
+            'password' => $_POST['local_password'] ?? '',
+        ];
+        // Test connection
+        try {
+            $srv = $cfg_actual['local_db']['server'];
+            $dbn = $cfg_actual['local_db']['database'];
+            $usr = $cfg_actual['local_db']['user'];
+            $pwd = $cfg_actual['local_db']['password'];
+            $dsn = "sqlsrv:Server={$srv};Database={$dbn}";
+            if ($usr) {
+                new PDO($dsn, $usr, $pwd, [PDO::ATTR_TIMEOUT => 3]);
+            } else {
+                new PDO($dsn, null, null, [PDO::ATTR_TIMEOUT => 3]);
+            }
+            file_put_contents($f_cfg, json_encode($cfg_actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $msg = '✅ Conexión SQL Express verificada y guardada.'; $msg_type = 'ok';
+        } catch(Exception $e) {
+            $msg = '❌ Error SQL Express: ' . $e->getMessage(); $msg_type = 'err';
+        }
+    }
+
     if (isset($_POST['save_cats']) && !empty($_SESSION['admin_ok'])) {
         $f_cfg = __DIR__ . '/sistemas_settings.json';
         $cfg_actual = file_exists($f_cfg) ? json_decode(file_get_contents($f_cfg), true) : [];
@@ -319,6 +347,22 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
         <div class="fg" style="margin-top:10px;"><label>Puerto TCP</label><input type="number" name="zebra_port" value="<?= htmlspecialchars($cfg['zebra_port']) ?>"></div>
       </div>
       <div class="cf"><button type="submit" name="save_zebra" class="bs">Guardar</button></div>
+    </form>
+
+    <!-- SQL Express -->
+    <form method="POST" class="card">
+      <div class="ch">
+        <div class="ci" style="background:#E8F4FD;">&#128451;</div>
+        <div><div class="ct">SQL Server Express</div><div class="cd">BD local para registro de actas</div></div>
+      </div>
+      <div class="cb">
+<?php $ldb = $cfg['local_db'] ?? []; ?>
+        <div class="fg"><label>Servidor</label><input type="text" name="local_server" value="<?= htmlspecialchars($ldb['server'] ?? 'localhost\SQLEXPRESS') ?>" placeholder="localhost\SQLEXPRESS"></div>
+        <div class="fg"><label>Base de datos</label><input type="text" name="local_database" value="<?= htmlspecialchars($ldb['database'] ?? 'SistemaNG') ?>" placeholder="SistemaNG"></div>
+        <div class="fg"><label>Usuario (vacío = Windows Auth)</label><input type="text" name="local_user" value="<?= htmlspecialchars($ldb['user'] ?? '') ?>" placeholder="Vacío para Windows Auth"></div>
+        <div class="fg"><label>Contraseña</label><input type="password" name="local_password" value="<?= htmlspecialchars($ldb['password'] ?? '') ?>"></div>
+      </div>
+      <div class="cf"><button type="submit" name="save_localdb" class="bs">Guardar</button></div>
     </form>
 
   </div>

@@ -14,6 +14,12 @@
     "empresa_color": "#e05816",
     "empresa_logo": "logo_empresa.png",
     "empresa_tema": "claro",
+    "local_db": {
+        "server": "localhost\\SQLEXPRESS",
+        "database": "SistemaNG",
+        "user": "",
+        "password": ""
+    },
     "show": {
         "computadoras": true,
         "monitores": true,
