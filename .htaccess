@@ -1,0 +1,45 @@
+# Bloquear acceso directo a archivos sensibles
+<FilesMatch "sistemas_settings\.json$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear acceso directo a config
+<FilesMatch "config\.php$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Restringir Admin solo a red interna
+<Files "Sistema_admin.php">
+    Order Allow,Deny
+    Allow from 127.0.0.1
+    Allow from ::1
+    Allow from 192.168.0.0/16
+    Allow from 10.0.0.0/8
+</Files>
+
+# Restringir APIs solo a red interna
+<Files "etiquetas_api.php">
+    Order Allow,Deny
+    Allow from 127.0.0.1
+    Allow from ::1
+    Allow from 192.168.0.0/16
+    Allow from 10.0.0.0/8
+</Files>
+
+<Files "actas_api.php">
+    Order Allow,Deny
+    Allow from 127.0.0.1
+    Allow from ::1
+    Allow from 192.168.0.0/16
+    Allow from 10.0.0.0/8
+</Files>
+
+<Files "etiquetas_print.php">
+    Order Allow,Deny
+    Allow from 127.0.0.1
+    Allow from ::1
+    Allow from 192.168.0.0/16
+    Allow from 10.0.0.0/8
+</Files>
