@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin &mdash; <%= branding.nombre %></title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
+.topbar{background:var(--bg-card);border-bottom:2px solid var(--color-principal);padding:12px 24px;display:flex;align-items:center;gap:12px;}
+.topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.topbar .actions{margin-left:auto;display:flex;gap:10px;align-items:center;}
+.topbar a.btn-back{padding:7px 16px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
+.body{max-width:1200px;margin:24px auto;padding:0 20px;}
+.page-title{font-size:18px;font-weight:900;color:var(--text-main);margin-bottom:2px;}
+.page-sub{font-size:11px;color:var(--text-muted);margin-bottom:20px;}
+.msg{padding:10px 16px;border-radius:7px;font-size:13px;margin-bottom:18px;}
+.msg.ok{background:rgba(40,167,69,0.12);border:1px solid #28a745;color:#1e7e34;}
+.msg.err{background:rgba(220,53,69,0.12);border:1px solid #dc3545;color:#a71d2a;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+.grid2{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px;}
+.card{background:var(--bg-card);border-radius:10px;border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column;}
+.ch{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-hover);}
+.ci{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.ct{font-size:12px;font-weight:800;color:var(--text-main);text-transform:uppercase;letter-spacing:0.5px;}
+.cd{font-size:10px;color:var(--text-muted);margin-top:1px;}
+.cb{padding:14px 16px;flex:1;}
+.fg{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.fg:last-child{margin-bottom:0;}
+.fg label{font-size:11px;font-weight:700;color:var(--text-main);text-transform:uppercase;letter-spacing:0.3px;}
+.fg input[type=text],.fg input[type=password],.fg input[type=number],.fg input[type=url]{width:100%;padding:7px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;}
+.fg input:focus{border-color:var(--color-principal);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cf{padding:10px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;}
+.bs{padding:7px 18px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;cursor:pointer;}
+.bs:hover{opacity:0.9;}
+.color-row{display:flex;gap:7px;align-items:center;}
+.logo-pre{background:var(--bg-input);border-radius:6px;padding:7px 10px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);margin-bottom:0;}
+.logo-pre span{font-size:10px;color:var(--text-muted);}
+.file-row{display:flex;gap:6px;align-items:center;}
+.file-input{flex:1;padding:6px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-muted);font-size:11px;}
+.btn-up{padding:7px 12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.sw-row{display:flex;align-items:center;gap:10px;padding:8px 0;}
+.sw-row span{font-size:12px;color:var(--text-main);}
+.sw-wrap{position:relative;width:48px;height:26px;flex-shrink:0;}
+.sw-wrap input[type=checkbox]{opacity:0;width:100%;height:100%;position:absolute;cursor:pointer;margin:0;z-index:2;}
+.sw-track{width:48px;height:26px;border-radius:13px;position:absolute;top:0;left:0;transition:background 0.3s;pointer-events:none;}
+.sw-knob{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;}
+.cat-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:6px;background:var(--bg-input);border:1px solid var(--border);font-size:11px;color:var(--text-main);cursor:pointer;}
+.cat-item input{accent-color:var(--color-principal);}
+.tema-preview{margin-top:14px;padding:10px;background:var(--bg-input);border-radius:7px;border:1px solid var(--border);}
+.tema-preview .label{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;}
+.tema-boxes{display:flex;gap:6px;}
+.tema-box{flex:1;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+#logo-upload-msg{font-size:11px;margin-top:4px;}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:80vh;}
+.login-card{background:var(--bg-card);border-radius:10px;padding:32px;width:100%;max-width:360px;border:1px solid var(--border);}
+</style>
+<%- include('partials/branding') %>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
+    <div class="sub">Panel de Configuracion</div>
+  </div>
+  <div class="actions">
+    <a href="/" class="btn-back">Dashboard &rarr;</a>
+  </div>
+</div>
+
+<% if (!loggedIn) { %>
+<div class="login-wrap">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:20px;">
+      <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:48px;object-fit:contain;margin-bottom:10px;">
+      <div style="font-size:14px;font-weight:700;color:var(--text-main);">Panel de Administracion</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Ingresa la contrasena de administrador</div>
+    </div>
+    <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
+    <form method="POST" action="/admin/login">
+      <div class="fg"><label>Contrasena</label><input type="password" name="password" placeholder="••••••••" autofocus style="padding:9px 12px;"></div>
+      <button type="submit" style="width:100%;padding:10px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">&#128272; Ingresar</button>
+    </form>
+  </div>
+</div>
+<% } else { %>
+<div class="body">
+  <div class="page-title">&#9881;&#65039; Panel de Configuracion</div>
+  <div class="page-sub">Ajustes de conexion, personalizacion e impresion</div>
+  <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
+
+  <!-- Fila 1: BD | GLPI | Zebra | SQL Express | AD (grid3 con wrap) -->
+  <div class="grid3">
+
+    <!-- Base de datos -->
+    <form method="POST" action="/admin/save-bd" class="card">
+      <div class="ch"><div class="ci" style="background:#E8F0FF;">&#128451;&#65039;</div><div><div class="ct">Base de Datos</div><div class="cd">MariaDB / MySQL</div></div></div>
+      <div class="cb">
+        <div class="row2">
+          <div class="fg"><label>Host / IP</label><input type="text" name="db_host" value="<%= cfg.db_host || '' %>"></div>
+          <div class="fg"><label>Puerto</label><input type="number" name="db_port" value="<%= cfg.db_port || '3306' %>"></div>
+        </div>
+        <div class="row2">
+          <div class="fg"><label>Nombre BD</label><input type="text" name="db_name" value="<%= cfg.db_name || '' %>"></div>
+          <div class="fg"><label>Usuario</label><input type="text" name="db_user" value="<%= cfg.db_user || '' %>"></div>
+        </div>
+        <div class="fg"><label>Contrasena</label><input type="password" name="db_pass" value="<%= cfg.db_pass || '' %>"></div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar y verificar</button></div>
+    </form>
+
+    <!-- GLPI -->
+    <form method="POST" action="/admin/save-glpi" class="card">
+      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128279;</div><div><div class="ct">GLPI</div><div class="cd">Conexion con GLPI 11</div></div></div>
+      <div class="cb">
+        <div class="fg"><label>Entity ID (0 = todas)</label><input type="number" name="entity_id" value="<%= cfg.entity_id || 0 %>"></div>
+        <div class="fg"><label>URL base (para QR)</label><input type="url" name="base_url" value="<%= cfg.base_url || '' %>"></div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar</button></div>
+    </form>
+
+    <!-- Impresora de Ticket -->
+    <form method="POST" action="/admin/save-zebra" class="card">
+      <div class="ch"><div class="ci" style="background:#F0F0F0;">&#128424;&#65039;</div><div><div class="ct">Impresora de Ticket</div><div class="cd">Etiquetas en red TCP</div></div></div>
+      <div class="cb">
+        <label style="font-size:11px;font-weight:700;color:var(--text-main);text-transform:uppercase;letter-spacing:0.3px;display:block;margin-bottom:3px;">Buscar por nombre o IP</label>
+        <div class="zbr" style="position:relative;margin-bottom:6px;">
+          <input type="text" id="zebra-search" placeholder="Escribe para buscar..." autocomplete="off" oninput="buscarZebra(this.value)" style="width:100%;padding:7px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">
+          <div class="zb-results" id="zebra-results" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+        <div id="zebra-badge" style="display:<%= cfg.zebra_ip ? 'flex' : 'none' %>;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:7px 10px;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div><div id="zebra-badge-nombre" style="font-size:12px;font-weight:700;color:var(--text-main);"><%= cfg.zebra_nombre || '' %></div><div id="zebra-badge-ip" style="font-size:10px;color:var(--color-principal);margin-top:1px;"><%= cfg.zebra_ip || '' %></div></div>
+          <span style="color:#dc3545;font-weight:700;cursor:pointer;" onclick="limpiarZebra()">&#10005;</span>
+        </div>
+        <input type="hidden" name="zebra_ip" id="zebra_ip" value="<%= cfg.zebra_ip || '' %>">
+        <input type="hidden" name="zebra_nombre" id="zebra_nombre" value="<%= cfg.zebra_nombre || '' %>">
+        <div class="fg" style="margin-top:10px;"><label>Puerto TCP</label><input type="number" name="zebra_port" value="<%= cfg.zebra_port || '9100' %>"></div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar</button></div>
+    </form>
+
+    <!-- SQL Express -->
+    <form method="POST" action="/admin/save-localdb" class="card">
+      <div class="ch"><div class="ci" style="background:#E8F4FD;">&#128451;</div><div><div class="ct">SQL Server Express</div><div class="cd">BD local para registro de actas</div></div></div>
+      <div class="cb">
+        <% const ldb = cfg.local_db || {}; %>
+        <div class="fg"><label>Servidor</label><input type="text" name="local_server" value="<%= ldb.server || 'localhost\\SQLEXPRESS' %>"></div>
+        <div class="fg"><label>Base de datos</label><input type="text" name="local_database" value="<%= ldb.database || 'SistemaNG' %>"></div>
+        <div class="fg"><label>Usuario (vacio = Windows Auth)</label><input type="text" name="local_user" value="<%= ldb.user || '' %>"></div>
+        <div class="fg"><label>Contrasena</label><input type="password" name="local_password" value="<%= ldb.password || '' %>"></div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar</button></div>
+    </form>
+
+    <!-- Active Directory -->
+    <% const adModo = ad.modo || 'automatica'; %>
+    <form method="POST" action="/admin/save-ad" class="card">
+      <div class="ch"><div class="ci" style="background:#FFF3E0;">&#128273;</div><div><div class="ct">Active Directory</div><div class="cd">Autenticacion LDAP</div></div></div>
+      <div class="cb">
+        <div class="sw-row" style="margin-bottom:12px;">
+          <span id="ad-mode-label" style="font-size:12px;font-weight:700;min-width:90px;"><%= adModo === 'automatica' ? '\u26A1 Automatica' : '\u270E Manual' %></span>
+          <div class="sw-wrap">
+            <input type="hidden" name="ad_modo" id="ad_modo" value="<%= adModo %>">
+            <input type="checkbox" id="ad-mode-check" <%= adModo === 'automatica' ? 'checked' : '' %> onchange="toggleAdMode()">
+            <div class="sw-track" id="ad-mode-track" style="background:<%= adModo === 'automatica' ? 'var(--color-principal)' : '#555' %>;"></div>
+            <div class="sw-knob" id="ad-mode-knob" style="left:<%= adModo === 'automatica' ? '25px' : '3px' %>;"></div>
+          </div>
+        </div>
+
+        <!-- Modo automatica: info de GLPI -->
+        <div id="ad-auto-section" style="display:<%= adModo === 'automatica' ? 'block' : 'none' %>;">
+          <% if (typeof glpiLdap !== 'undefined' && glpiLdap) { %>
+          <div style="padding:10px 12px;border-radius:7px;background:rgba(40,167,69,0.08);border:1px solid rgba(40,167,69,0.25);font-size:11px;line-height:1.7;">
+            <div style="font-weight:700;color:#1e7e34;margin-bottom:4px;">&#9989; Conectado desde GLPI</div>
+            <div style="color:var(--text-sub);">
+              <strong>Nombre:</strong> <%= glpiLdap.nombre %><br>
+              <strong>Servidor:</strong> <%= glpiLdap.servidor %>:<%= glpiLdap.puerto %><br>
+              <strong>Base DN:</strong> <%= glpiLdap.base_dn %>
+            </div>
+          </div>
+          <% } else { %>
+          <div style="padding:10px 12px;border-radius:7px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);font-size:11px;color:#d39e00;">
+            &#9888; No se detecto LDAP en la base de datos de GLPI. Configura primero la conexion a la BD o cambia a modo manual.
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Modo manual: formulario -->
+        <div id="ad-manual-section" style="display:<%= adModo === 'manual' ? 'block' : 'none' %>;">
+          <div class="fg"><label>Nombre (se muestra en login)</label><input type="text" name="ad_nombre" value="<%= ad.nombre || 'Active Directory' %>"></div>
+          <div class="row2">
+            <div class="fg"><label>Servidor LDAP</label><input type="text" name="ad_servidor" value="<%= ad.servidor || '' %>"></div>
+            <div class="fg"><label>Puerto</label><input type="number" name="ad_puerto" value="<%= ad.puerto || 389 %>"></div>
+          </div>
+          <div class="fg"><label>Dominio</label><input type="text" name="ad_dominio" value="<%= ad.dominio || '' %>"></div>
+          <div class="fg"><label>Base DN</label><input type="text" name="ad_base_dn" value="<%= ad.base_dn || '' %>"></div>
+          <div class="fg"><label>Sufijo usuario (opcional)</label><input type="text" name="ad_sufijo" value="<%= ad.sufijo_usuario || '' %>"></div>
+        </div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar</button></div>
+    </form>
+
+    <!-- Personalizacion -->
+    <div class="card">
+      <div class="ch"><div class="ci" style="background:#FFF0E8;">&#127912;</div><div><div class="ct">Personalizacion</div><div class="cd">Marca visual</div></div></div>
+      <div class="cb">
+        <!-- Logo -->
+        <div class="fg">
+          <label>Logo</label>
+          <div class="logo-pre" style="height:38px;">
+            <img id="logo-preview" src="<%= branding.logo %>" alt="Logo" style="height:26px;object-fit:contain;">
+            <span style="flex:1;"><%= cfg.empresa_logo || 'logo_empresa.png' %></span>
+            <label style="margin:0;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:10px;color:var(--color-principal);font-weight:700;text-transform:none;letter-spacing:0;">
+              <input type="file" id="logo-file" accept="image/*" style="display:none;" onchange="subirLogo()">
+              &#128444; Cambiar
+            </label>
+          </div>
+          <div id="logo-upload-msg"></div>
+        </div>
+
+        <!-- Nombre y Color -->
+        <form method="POST" action="/admin/save-marca" id="form-marca">
+          <div class="fg"><label>Nombre de la empresa</label><input type="text" name="empresa_nombre" value="<%= cfg.empresa_nombre || 'NAGSA' %>"></div>
+          <div class="fg"><label>Color principal</label>
+            <div class="color-row">
+              <input type="color" name="empresa_color" id="color-picker" value="<%= cfg.empresa_color || '#E05816' %>" style="width:34px;height:34px;padding:2px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);cursor:pointer;flex-shrink:0;">
+              <input type="text" id="color-hex" value="<%= cfg.empresa_color || '#E05816' %>" style="flex:1;padding:7px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;" readonly>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="cf"><button type="submit" form="form-marca" class="bs">Guardar</button></div>
+    </div>
+
+  </div>
+
+  <!-- Fila 3: Modulos | Categorias -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+
+    <!-- Estado de modulos -->
+    <form method="POST" action="/admin/save-modulos" class="card">
+      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128268;</div><div><div class="ct">Estado de Modulos</div><div class="cd">Activar o desactivar modulos del sistema</div></div></div>
+      <div class="cb">
+        <% const mods = cfg.modulos || {}; const modLabels = { etiquetas: '\u{1F3F7}\u{FE0F} Etiquetas', actas: '\u{1F4CB} Actas', reportes: '\u{1F4CA} Reportes', inversiones: '\u{1F4B0} Inversiones', permisos: '\u{1F514} Permisos y Notif.' }; %>
+        <% for (const [key, label] of Object.entries(modLabels)) { const estado = mods[key] || 'deshabilitado'; %>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+          <span style="font-size:13px;color:var(--text-main);"><%= label %></span>
+          <select name="mod_<%= key %>" style="padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;cursor:pointer;">
+            <option value="activo" <%= estado === 'activo' ? 'selected' : '' %>>&#9989; Activo</option>
+            <option value="pruebas" <%= estado === 'pruebas' ? 'selected' : '' %>>&#129514; Pruebas</option>
+            <option value="deshabilitado" <%= estado === 'deshabilitado' ? 'selected' : '' %>>&#128683; Deshabilitado</option>
+          </select>
+        </div>
+        <% } %>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar estado</button></div>
+    </form>
+
+    <!-- Categorias -->
+    <form method="POST" action="/admin/save-cats" class="card">
+      <div class="ch"><div class="ci" style="background:#F0E8FF;">&#128203;</div><div><div class="ct">Categorias a Mostrar</div><div class="cd">Visibles en el modulo de etiquetas</div></div></div>
+      <div class="cb">
+        <div class="cats">
+          <label class="cat-item"><input type="checkbox" name="show_comp" <%= show.computadoras ? 'checked' : '' %>> &#128187; Computadoras</label>
+          <label class="cat-item"><input type="checkbox" name="show_mon" <%= show.monitores ? 'checked' : '' %>> &#128421; Monitores</label>
+          <label class="cat-item"><input type="checkbox" name="show_imp" <%= show.impresoras ? 'checked' : '' %>> &#128424; Impresoras</label>
+          <label class="cat-item"><input type="checkbox" name="show_per" <%= show.perifericos ? 'checked' : '' %>> &#128433; Perifericos</label>
+          <label class="cat-item"><input type="checkbox" name="show_red" <%= show.redes ? 'checked' : '' %>> &#127760; Disp. de Red</label>
+          <label class="cat-item"><input type="checkbox" name="show_gab" <%= show.gabinetes ? 'checked' : '' %>> &#128452; Gabinetes</label>
+          <label class="cat-item"><input type="checkbox" name="show_pas" <%= show.pasivos ? 'checked' : '' %>> &#128268; Disp. Pasivos</label>
+          <label class="cat-item"><input type="checkbox" name="show_car" <%= show.cartuchos ? 'checked' : '' %>> &#129656; Cartuchos</label>
+          <label class="cat-item"><input type="checkbox" name="show_con" <%= show.consumibles ? 'checked' : '' %>> &#128230; Consumibles</label>
+          <label class="cat-item"><input type="checkbox" name="show_tel" <%= show.telefonos ? 'checked' : '' %>> &#128241; Telefonos</label>
+        </div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar categorias</button></div>
+    </form>
+
+  </div>
+</div>
+<% } %>
+
+<script>
+// Color picker sync
+document.addEventListener('DOMContentLoaded', () => {
+  const picker = document.getElementById('color-picker');
+  const hex = document.getElementById('color-hex');
+  if (picker && hex) {
+    picker.addEventListener('input', () => { hex.value = picker.value; });
+    hex.addEventListener('input', () => {
+      const v = hex.value.trim();
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) picker.value = v;
+    });
+  }
+});
+
+// Logo upload
+function subirLogo() {
+  const fileInput = document.getElementById('logo-file');
+  const msgEl = document.getElementById('logo-upload-msg');
+  if (!fileInput.files || !fileInput.files[0]) {
+    msgEl.style.color = 'var(--color-principal)';
+    msgEl.textContent = 'Selecciona un archivo primero.';
+    return;
+  }
+  msgEl.style.color = 'var(--text-muted)';
+  msgEl.textContent = 'Subiendo...';
+  const fd = new FormData();
+  fd.append('empresa_logo_file', fileInput.files[0]);
+  fetch('/admin/upload-logo', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        msgEl.style.color = 'green';
+        msgEl.textContent = data.msg;
+        setTimeout(() => location.reload(true), 1200);
+      } else {
+        msgEl.style.color = 'red';
+        msgEl.textContent = data.msg;
+      }
+    })
+    .catch(() => { msgEl.style.color = 'red'; msgEl.textContent = 'Error de conexion.'; });
+}
+
+// Buscar impresora en GLPI
+let zebraTimeout = null;
+function buscarZebra(q) {
+  clearTimeout(zebraTimeout);
+  const results = document.getElementById('zebra-results');
+  if (q.length < 1) { results.style.display = 'none'; return; }
+  zebraTimeout = setTimeout(async () => {
+    try {
+      const data = await fetch('/etiquetas/api/impresoras?q=' + encodeURIComponent(q)).then(r => r.json());
+      if (!data.length) { results.style.display = 'none'; return; }
+      results.innerHTML = data.map(p =>
+        '<div style="padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;transition:background 0.1s;" onmouseover="this.style.background=\'var(--bg-hover)\'" onmouseout="this.style.background=\'\'" onclick="seleccionarZebra(\'' + (p.nombre||'').replace(/'/g,"\\'") + '\',\'' + (p.ip||'').replace(/'/g,"\\'") + '\')">' +
+        '<div style="font-weight:700;">' + (p.nombre||'---') + '</div>' +
+        '<div style="font-size:10px;color:var(--color-principal);">IP: ' + (p.ip||'---') + ' | Modelo: ' + (p.modelo||'---') + ' | S/N: ' + (p.serie||'---') + '</div></div>'
+      ).join('');
+      results.style.display = 'block';
+    } catch(e) { results.style.display = 'none'; }
+  }, 300);
+}
+
+function seleccionarZebra(nombre, ip) {
+  document.getElementById('zebra_ip').value = ip;
+  document.getElementById('zebra_nombre').value = nombre;
+  document.getElementById('zebra-badge-nombre').textContent = nombre;
+  document.getElementById('zebra-badge-ip').textContent = ip;
+  document.getElementById('zebra-badge').style.display = 'flex';
+  document.getElementById('zebra-results').style.display = 'none';
+  document.getElementById('zebra-search').value = '';
+}
+
+function limpiarZebra() {
+  document.getElementById('zebra_ip').value = '';
+  document.getElementById('zebra_nombre').value = '';
+  document.getElementById('zebra-badge').style.display = 'none';
+}
+
+// AD mode toggle
+function toggleAdMode() {
+  const chk = document.getElementById('ad-mode-check');
+  const modo = chk.checked ? 'automatica' : 'manual';
+  document.getElementById('ad_modo').value = modo;
+  document.getElementById('ad-mode-track').style.background = chk.checked ? 'var(--color-principal)' : '#555';
+  document.getElementById('ad-mode-knob').style.left = chk.checked ? '25px' : '3px';
+  document.getElementById('ad-mode-label').textContent = chk.checked ? '\u26A1 Automatica' : '\u270E Manual';
+  document.getElementById('ad-auto-section').style.display = modo === 'automatica' ? 'block' : 'none';
+  document.getElementById('ad-manual-section').style.display = modo === 'manual' ? 'block' : 'none';
+}
+
+// Tema toggle
+function toggleTema() {
+  const chk = document.getElementById('tema-check');
+  const tema = chk.checked ? 'oscuro' : 'claro';
+  document.getElementById('tema-switch').style.background = chk.checked ? 'var(--color-principal)' : '#555';
+  document.getElementById('tema-knob').style.left = chk.checked ? '25px' : '3px';
+  fetch('/admin/cambiar-tema', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empresa_tema: tema })
+  }).then(() => setTimeout(() => location.reload(), 300));
+}
+</script>
+</body>
+</html>

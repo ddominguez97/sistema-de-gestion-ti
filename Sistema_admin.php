@@ -109,13 +109,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['save_modulos']) && !empty($_SESSION['admin_ok'])) {
         $f_cfg = __DIR__ . '/sistemas_settings.json';
         $cfg_actual = file_exists($f_cfg) ? json_decode(file_get_contents($f_cfg), true) : [];
-        $estados_validos = ['activo','pruebas','mantenimiento'];
+        $estados_validos = ['activo','pruebas','deshabilitado'];
         foreach(['etiquetas','actas','reportes','inversiones','permisos'] as $mod) {
-            $val = $_POST['mod_'.$mod] ?? 'mantenimiento';
-            $cfg_actual['modulos'][$mod] = in_array($val, $estados_validos) ? $val : 'mantenimiento';
+            $val = $_POST['mod_'.$mod] ?? 'deshabilitado';
+            $cfg_actual['modulos'][$mod] = in_array($val, $estados_validos) ? $val : 'deshabilitado';
         }
         file_put_contents($f_cfg, json_encode($cfg_actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         $msg = '✅ Estado de módulos guardado.'; $msg_type = 'ok';
+    }
+
+    if (isset($_POST['save_ad']) && !empty($_SESSION['admin_ok'])) {
+        $f_cfg = __DIR__ . '/sistemas_settings.json';
+        $cfg_actual = file_exists($f_cfg) ? json_decode(file_get_contents($f_cfg), true) : [];
+        $cfg_actual['active_directory'] = [
+            'habilitado'     => isset($_POST['ad_habilitado']),
+            'nombre'         => trim($_POST['ad_nombre'] ?? 'Active Directory'),
+            'servidor'       => trim($_POST['ad_servidor'] ?? ''),
+            'puerto'         => (int)($_POST['ad_puerto'] ?? 389),
+            'dominio'        => trim($_POST['ad_dominio'] ?? ''),
+            'base_dn'        => trim($_POST['ad_base_dn'] ?? ''),
+            'sufijo_usuario' => trim($_POST['ad_sufijo'] ?? ''),
+        ];
+
+        // Test connection si hay servidor
+        $srv = $cfg_actual['active_directory']['servidor'];
+        if ($srv) {
+            $port = $cfg_actual['active_directory']['puerto'];
+            $ldap = @ldap_connect($srv, $port);
+            if ($ldap) {
+                ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+                ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+                // Intentar bind anónimo para verificar conectividad
+                $bind = @ldap_bind($ldap);
+                @ldap_close($ldap);
+                file_put_contents($f_cfg, json_encode($cfg_actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                $msg = '✅ Configuración Active Directory guardada. Conexión al servidor verificada.'; $msg_type = 'ok';
+            } else {
+                file_put_contents($f_cfg, json_encode($cfg_actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                $msg = '⚠️ Configuración guardada pero no se pudo conectar al servidor LDAP.'; $msg_type = 'err';
+            }
+        } else {
+            file_put_contents($f_cfg, json_encode($cfg_actual, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            $msg = '✅ Configuración Active Directory guardada.'; $msg_type = 'ok';
+        }
     }
 
     if (isset($_POST['save_localdb']) && !empty($_SESSION['admin_ok'])) {
@@ -365,6 +401,34 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
       <div class="cf"><button type="submit" name="save_localdb" class="bs">Guardar</button></div>
     </form>
 
+    <!-- Active Directory -->
+    <form method="POST" class="card">
+      <div class="ch">
+        <div class="ci" style="background:#FFF3E0;">🔑</div>
+        <div><div class="ct">Active Directory</div><div class="cd">Autenticación LDAP</div></div>
+      </div>
+      <div class="cb">
+<?php $ad = $cfg['active_directory'] ?? []; ?>
+        <div class="sw-row" style="margin-bottom:10px;">
+          <span style="font-size:12px;font-weight:700;">Habilitado</span>
+          <div class="sw-wrap">
+            <input type="checkbox" name="ad_habilitado" <?= !empty($ad['habilitado'])?'checked':'' ?>>
+            <div class="sw-track" style="background:<?= !empty($ad['habilitado'])?'var(--color-principal)':'#555' ?>;"></div>
+            <div class="sw-knob" style="left:<?= !empty($ad['habilitado'])?'25px':'3px' ?>;"></div>
+          </div>
+        </div>
+        <div class="fg"><label>Nombre (se muestra en login)</label><input type="text" name="ad_nombre" value="<?= htmlspecialchars($ad['nombre'] ?? 'Active Directory') ?>" placeholder="Ej: Dominio NAGSA"></div>
+        <div class="row2">
+          <div class="fg"><label>Servidor LDAP</label><input type="text" name="ad_servidor" value="<?= htmlspecialchars($ad['servidor'] ?? '') ?>" placeholder="192.168.x.x o dc.dominio.com"></div>
+          <div class="fg"><label>Puerto</label><input type="number" name="ad_puerto" value="<?= htmlspecialchars($ad['puerto'] ?? '389') ?>"></div>
+        </div>
+        <div class="fg"><label>Dominio</label><input type="text" name="ad_dominio" value="<?= htmlspecialchars($ad['dominio'] ?? '') ?>" placeholder="NAGSA o nagsa.com.ec"></div>
+        <div class="fg"><label>Base DN</label><input type="text" name="ad_base_dn" value="<?= htmlspecialchars($ad['base_dn'] ?? '') ?>" placeholder="DC=nagsa,DC=com,DC=ec"></div>
+        <div class="fg"><label>Sufijo usuario (opcional)</label><input type="text" name="ad_sufijo" value="<?= htmlspecialchars($ad['sufijo_usuario'] ?? '') ?>" placeholder="@nagsa.com.ec"></div>
+      </div>
+      <div class="cf"><button type="submit" name="save_ad" class="bs">Guardar y verificar</button></div>
+    </form>
+
   </div>
 
   <!-- Fila 2: Personalización | Tema -->
@@ -461,18 +525,17 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
       </div>
       <div class="cb">
         <?php
-        $mods = $cfg['modulos'] ?? ['etiquetas'=>'activo','actas'=>'activo','reportes'=>'mantenimiento','inversiones'=>'mantenimiento','permisos'=>'mantenimiento'];
+        $mods = $cfg['modulos'] ?? ['etiquetas'=>'activo','actas'=>'activo','reportes'=>'deshabilitado','inversiones'=>'deshabilitado','permisos'=>'deshabilitado'];
         $modLabels = ['etiquetas'=>'🏷️ Etiquetas','actas'=>'📋 Actas','reportes'=>'📊 Reportes','inversiones'=>'💰 Inversiones','permisos'=>'🔔 Permisos y Notif.'];
-        $estadoColors = ['activo'=>'#28a745','pruebas'=>'#E05816','mantenimiento'=>'#dc3545'];
         foreach($modLabels as $key=>$label):
-            $estado = $mods[$key] ?? 'mantenimiento';
+            $estado = $mods[$key] ?? 'deshabilitado';
         ?>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
           <span style="font-size:13px;color:var(--text-main);"><?= $label ?></span>
           <select name="mod_<?= $key ?>" style="padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;cursor:pointer;accent-color:var(--color-principal);">
             <option value="activo"       <?= $estado==='activo'?'selected':'' ?>>✅ Activo</option>
             <option value="pruebas"      <?= $estado==='pruebas'?'selected':'' ?>>🧪 Pruebas</option>
-            <option value="mantenimiento"<?= $estado==='mantenimiento'?'selected':'' ?>>🔧 Mantenimiento</option>
+            <option value="deshabilitado"<?= $estado==='deshabilitado'?'selected':'' ?>>🚫 Deshabilitado</option>
           </select>
         </div>
         <?php endforeach; ?>

@@ -1,2 +1,5 @@
 start.bat
 *.log
+node_modules/
+stitch/.env
+.env

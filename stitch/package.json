@@ -1,0 +1,16 @@
+{
+  "name": "sistema-ng-stitch",
+  "version": "1.0.0",
+  "description": "Google Stitch AI - Generador de UI/UX para Sistema NG",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate-screen.js",
+    "variants": "node generate-variants.js",
+    "list": "node list-projects.js",
+    "setup": "npm install && echo Stitch SDK instalado correctamente!"
+  },
+  "dependencies": {
+    "@google/stitch-sdk": "latest",
+    "dotenv": "latest"
+  }
+}

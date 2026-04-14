@@ -6,7 +6,7 @@
     "db_pass": "glpi_db_pass",
     "db_charset": "utf8mb4",
     "entity_id": 0,
-    "base_url": "https:\/\/glpi.nagsa.com.ec",
+    "base_url": "https://glpi.nagsa.com.ec",
     "zebra_ip": "192.168.106.87",
     "zebra_nombre": "D5N231202429",
     "zebra_port": "9100",
@@ -38,5 +38,22 @@
         "reportes": "pruebas",
         "inversiones": "deshabilitado",
         "permisos": "deshabilitado"
+    },
+    "stitch": {
+        "habilitado": true,
+        "api_key": "",
+        "base_url": "https://stitch.withgoogle.com",
+        "default_device": "DESKTOP",
+        "default_model": "GEMINI_3_FLASH"
+    },
+    "active_directory": {
+        "modo": "automatica",
+        "habilitado": true,
+        "nombre": "Active Directory",
+        "servidor": "",
+        "puerto": 389,
+        "dominio": "",
+        "base_dn": "",
+        "sufijo_usuario": ""
     }
 }

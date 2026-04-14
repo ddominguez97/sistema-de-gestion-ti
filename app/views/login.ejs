@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= branding.nombre %> System &mdash; Login</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.login-card{background:var(--bg-card);border-radius:12px;padding:40px 36px;width:100%;max-width:420px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .sub{font-size:11px;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:6px;}
+.login-title{font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:28px;}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:5px;}
+input{width:100%;padding:11px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;margin-bottom:16px;transition:border-color 0.15s;}
+input:focus{border-color:var(--color-principal);}
+.btn{width:100%;padding:13px;border-radius:7px;border:none;background:var(--color-principal);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+.btn:hover{background:var(--color-hover);}
+.error{background:rgba(220,53,69,0.12);border:1px solid rgba(220,53,69,0.4);color:#e57373;padding:11px 14px;border-radius:7px;font-size:13px;margin-bottom:18px;}
+</style>
+<%- include('partials/branding') %>
+</head>
+<body>
+<div class="login-card">
+  <div class="login-logo">
+    <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:60px;object-fit:contain;margin-bottom:8px;">
+    <div class="sub">Sistema de Gestion de Activos TI</div>
+  </div>
+  <div class="login-title">Ingresa con tus credenciales</div>
+  <% if (error) { %>
+  <div class="error"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/">
+    <label>Usuario</label>
+    <input type="text" name="username" placeholder="Usuario" autofocus required>
+    <label>Contrasena</label>
+    <input type="password" name="password" placeholder="Contrasena" required>
+    <button class="btn" type="submit">Ingresar</button>
+  </form>
+</div>
+</body>
+</html>

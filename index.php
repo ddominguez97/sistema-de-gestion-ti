@@ -19,25 +19,86 @@ function badgeMod($m) {
 }
 function cardMod($m) { return estadoMod($m)==='deshabilitado' ? 'disabled' : ''; }
 $login_error='';
+$ad_cfg = $cfg['active_directory'] ?? [];
+$ad_habilitado = !empty($ad_cfg['habilitado']) && !empty($ad_cfg['servidor']);
+$ad_nombre = $ad_cfg['nombre'] ?? 'Active Directory';
+
 if($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['username'])){
-    $cfg_file = __DIR__.'/sistemas_settings.json'; // en raíz
-    if(!file_exists($cfg_file)){
-        $login_error='No hay configuración de BD. Configure primero en Sistema_admin.php';
-    } else {
-        $cfg=json_decode(file_get_contents($cfg_file),true);
-        $dsn='mysql:host='.$cfg['db_host'].';port='.$cfg['db_port'].';dbname='.$cfg['db_name'].';charset=utf8mb4';
-        try{
-            $pdo=new PDO($dsn,$cfg['db_user'],$cfg['db_pass'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
-            $stmt=$pdo->prepare("SELECT id,name,password,firstname,realname FROM glpi_users WHERE name=:u AND is_deleted=0 AND is_active=1 LIMIT 1");
-            $stmt->execute([':u'=>trim($_POST['username'])]);
-            $user=$stmt->fetch(PDO::FETCH_ASSOC);
-            if($user && password_verify($_POST['password'],$user['password'])){
-                $_SESSION['nagsa_user']=$user['name'];
-                $_SESSION['nagsa_name']=trim($user['firstname'].' '.$user['realname']);
+    $auth_method = $_POST['auth_method'] ?? 'glpi';
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+
+    if($auth_method === 'ad' && $ad_habilitado){
+        // ── Autenticación Active Directory (LDAP) ──
+        $srv    = $ad_cfg['servidor'];
+        $port   = (int)($ad_cfg['puerto'] ?? 389);
+        $domain = $ad_cfg['dominio'] ?? '';
+        $sufijo = $ad_cfg['sufijo_usuario'] ?? '';
+
+        // Construir usuario LDAP: DOMINIO\usuario o usuario@sufijo
+        if($sufijo) {
+            $ldap_user = $username . $sufijo;
+        } elseif($domain) {
+            $ldap_user = $domain . '\\' . $username;
+        } else {
+            $ldap_user = $username;
+        }
+
+        $ldap = @ldap_connect($srv, $port);
+        if($ldap){
+            ldap_set_option($ldap, LDAP_OPT_PROTOCOL_VERSION, 3);
+            ldap_set_option($ldap, LDAP_OPT_REFERRALS, 0);
+            ldap_set_option($ldap, LDAP_OPT_NETWORK_TIMEOUT, 5);
+            $bind = @ldap_bind($ldap, $ldap_user, $password);
+            if($bind){
+                // Autenticación AD exitosa - buscar nombre completo en AD
+                $display_name = $username;
+                $base_dn = $ad_cfg['base_dn'] ?? '';
+                if($base_dn){
+                    $search = @ldap_search($ldap, $base_dn, "(sAMAccountName={$username})", ['displayname','givenname','sn']);
+                    if($search){
+                        $entries = ldap_get_entries($ldap, $search);
+                        if($entries['count'] > 0){
+                            $display_name = $entries[0]['displayname'][0]
+                                ?? trim(($entries[0]['givenname'][0] ?? '') . ' ' . ($entries[0]['sn'][0] ?? ''))
+                                ?: $username;
+                        }
+                    }
+                }
+                @ldap_close($ldap);
+                $_SESSION['nagsa_user']=$username;
+                $_SESSION['nagsa_name']=$display_name;
+                $_SESSION['nagsa_auth']='ad';
                 $_SESSION['last_activity']=time();
                 header('Location: '.$_SERVER['PHP_SELF']); exit;
-            } else { $login_error='Usuario o contraseña incorrectos.'; }
-        } catch(PDOException $e){ $login_error='Error de conexión a la BD.'; }
+            } else {
+                @ldap_close($ldap);
+                $login_error='Usuario o contraseña incorrectos.';
+            }
+        } else {
+            $login_error='No se pudo conectar al servidor Active Directory.';
+        }
+    } else {
+        // ── Autenticación Base Interna (GLPI) ──
+        $cfg_file = __DIR__.'/sistemas_settings.json';
+        if(!file_exists($cfg_file)){
+            $login_error='No hay configuración de BD. Configure primero en Sistema_admin.php';
+        } else {
+            $dsn='mysql:host='.$cfg['db_host'].';port='.$cfg['db_port'].';dbname='.$cfg['db_name'].';charset=utf8mb4';
+            try{
+                $pdo=new PDO($dsn,$cfg['db_user'],$cfg['db_pass'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION]);
+                $stmt=$pdo->prepare("SELECT id,name,password,firstname,realname FROM glpi_users WHERE name=:u AND is_deleted=0 AND is_active=1 LIMIT 1");
+                $stmt->execute([':u'=>$username]);
+                $user=$stmt->fetch(PDO::FETCH_ASSOC);
+                if($user && password_verify($password,$user['password'])){
+                    $_SESSION['nagsa_user']=$user['name'];
+                    $_SESSION['nagsa_name']=trim($user['firstname'].' '.$user['realname']);
+                    $_SESSION['nagsa_auth']='glpi';
+                    $_SESSION['last_activity']=time();
+                    header('Location: '.$_SERVER['PHP_SELF']); exit;
+                } else { $login_error='Usuario o contraseña incorrectos.'; }
+            } catch(PDOException $e){ $login_error='Error de conexión a la BD.'; }
+        }
     }
 }
 
@@ -60,9 +121,11 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:5px;}
 input{width:100%;padding:11px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;margin-bottom:16px;transition:border-color 0.15s;}
 input:focus{border-color:var(--color-principal);}
-.btn{width:100%;padding:13px;border-radius:7px;border:none;background:var(--color-principal);color:var(--text-main);font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+.btn{width:100%;padding:13px;border-radius:7px;border:none;background:var(--color-principal);color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s;margin-top:4px;}
 .btn:hover{background:var(--color-hover);}
 .error{background:rgba(220,53,69,0.12);border:1px solid rgba(220,53,69,0.4);color:#e57373;padding:11px 14px;border-radius:7px;font-size:13px;margin-bottom:18px;}
+select.auth-select{width:100%;padding:11px 14px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;margin-bottom:16px;cursor:pointer;}
+select.auth-select:focus{border-color:var(--color-principal);}
 </style>
 <?php brandingCSS(); ?>
 </head>
@@ -72,16 +135,25 @@ input:focus{border-color:var(--color-principal);}
     <img src="<?= htmlspecialchars($branding['logo']) ?>" alt="<?= htmlspecialchars($branding['nombre']) ?>" style="height:60px;object-fit:contain;margin-bottom:8px;">
     <div class="sub">Sistema de Gestión de Activos TI</div>
   </div>
-  <div class="login-title">Ingresa con tu usuario de GLPI</div>
+  <div class="login-title">Ingresa con tus credenciales</div>
   <?php if($login_error): ?>
-  <div class="error">⚠️ <?=htmlspecialchars($login_error)?></div>
+  <div class="error"><?=htmlspecialchars($login_error)?></div>
   <?php endif; ?>
   <form method="POST">
+    <?php if($ad_habilitado): ?>
+    <label>Iniciar sesión con</label>
+    <select name="auth_method" class="auth-select">
+      <option value="glpi">Base interna (GLPI)</option>
+      <option value="ad"><?= htmlspecialchars($ad_nombre) ?></option>
+    </select>
+    <?php else: ?>
+    <input type="hidden" name="auth_method" value="glpi">
+    <?php endif; ?>
     <label>Usuario</label>
-    <input type="text" name="username" placeholder="Usuario GLPI" autofocus required>
+    <input type="text" name="username" placeholder="Usuario" autofocus required>
     <label>Contraseña</label>
     <input type="password" name="password" placeholder="Contraseña" required>
-    <button class="btn" type="submit">🔐 Ingresar</button>
+    <button class="btn" type="submit">Ingresar</button>
   </form>
 </div>
 </body>

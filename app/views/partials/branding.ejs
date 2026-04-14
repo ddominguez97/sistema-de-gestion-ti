@@ -1,0 +1,27 @@
+<style>
+:root {
+  --color-principal: <%= branding.color %>;
+  --color-hover: <%= branding.color %>cc;
+  --bg-body:    <%= themeVars.bg_body %>;
+  --bg-card:    <%= themeVars.bg_card %>;
+  --bg-sidebar: <%= themeVars.bg_sidebar %>;
+  --bg-topbar:  <%= themeVars.bg_topbar %>;
+  --bg-input:   <%= themeVars.bg_input %>;
+  --bg-hover:   <%= themeVars.bg_hover %>;
+  --bg-dark2:   <%= themeVars.bg_dark2 %>;
+  --bg-dark3:   <%= themeVars.bg_dark3 %>;
+  --text-main:  <%= themeVars.text_main %>;
+  --text-sub:   <%= themeVars.text_sub %>;
+  --text-muted: <%= themeVars.text_muted %>;
+  --border:     <%= themeVars.border %>;
+  --border2:    <%= themeVars.border2 %>;
+}
+body { background: var(--bg-body) !important; color: var(--text-main) !important; }
+</style>
+<script>
+window.NAGSA_COLOR  = '<%= branding.color %>';
+window.NAGSA_LOGO   = '<%= branding.logo %>';
+window.NAGSA_NOMBRE = '<%= branding.nombre %>';
+window.NAGSA_TEMA   = '<%= branding.tema %>';
+window.NAGSA_URL    = '<%= glpiUrl %>';
+</script>
