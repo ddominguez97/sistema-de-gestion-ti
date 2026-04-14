@@ -113,39 +113,40 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 </div>
 <div class="container">
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('registro')">&#128203; Registro de Actas</div>
-    <div class="tab" onclick="switchTab('resguardo')">&#9989; Aceptacion / Resguardo</div>
-    <div class="tab" onclick="switchTab('estadisticas')">&#128202; Estadisticas</div>
+    <div class="tab active" onclick="switchTab('resguardo')">&#9989; Aceptacion / Resguardo</div>
+    <div class="tab" onclick="switchTab('registro')">&#128203; Registro de Actas</div>
+    <% if (esAdmin) { %><div class="tab" onclick="switchTab('estadisticas')">&#128202; Estadisticas</div><% } %>
   </div>
-  <div class="tab-content active" id="tab-registro">
-    <div class="card"><div class="section-title">Filtros</div>
+  <div class="tab-content active" id="tab-resguardo">
+    <div class="card"><div class="section-title">Actas Pendientes de Firma</div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;"><%= typeof esAdmin !== 'undefined' && esAdmin ? 'Actas que requieren tu atencion o firma para completar el proceso.' : 'Actas que requieren tu firma para completar el proceso.' %></p>
+      <div style="max-height:500px;overflow-y:auto;">
+        <table class="data-table"><thead><tr><th>N&deg; Acta</th><th>Tipo</th><th>Fecha</th><th>Recibe / Retira</th><th>Equipos</th><th>Creado por</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tabla-pendientes"><tr class="empty-row"><td colspan="8">Cargando...</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-registro">
+    <div class="card"><div class="section-title">Historial</div>
       <div class="filters">
         <input type="text" id="f-buscar" placeholder="Buscar por numero, persona...">
         <select id="f-tipo"><option value="">Todos los tipos</option><option value="entrega">Entrega</option><option value="salida">Salida</option></select>
-        <select id="f-estado"><option value="">Todos los estados</option><option value="pendiente">Pendiente</option><option value="aceptada">Aceptada</option><option value="rechazada">Rechazada</option></select>
         <input type="date" id="f-desde" title="Desde"><input type="date" id="f-hasta" title="Hasta">
         <button class="btn-filter" onclick="cargarActas()">&#128269; Filtrar</button>
         <button class="btn-clear" onclick="limpiarFiltros()">Limpiar</button>
       </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden;"><div style="max-height:500px;overflow-y:auto;">
-      <table class="data-table"><thead><tr><th>N&deg; Acta</th><th>Tipo</th><th>Fecha</th><th>Recibe / Retira</th><th>Equipos</th><th>Estado</th><th>Creado por</th><th>Acciones</th></tr></thead>
-      <tbody id="tabla-actas"><tr class="empty-row"><td colspan="8">Cargando actas...</td></tr></tbody></table>
+      <table class="data-table"><thead><tr><th>N&deg; Acta</th><th>Tipo</th><th>Fecha</th><th>Recibe / Retira</th><th>Equipos</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-actas"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody></table>
     </div></div>
   </div>
-  <div class="tab-content" id="tab-resguardo">
-    <div class="card"><div class="section-title">Actas Pendientes de Aceptacion</div>
-      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Selecciona un acta pendiente para revisarla.</p>
-      <div style="max-height:400px;overflow-y:auto;">
-        <table class="data-table"><thead><tr><th>N&deg; Acta</th><th>Tipo</th><th>Fecha</th><th>Recibe / Retira</th><th>Equipos</th><th>Creado por</th><th></th></tr></thead>
-        <tbody id="tabla-pendientes"><tr class="empty-row"><td colspan="7">Cargando...</td></tr></tbody></table>
-      </div>
-    </div>
-  </div>
+  <% if (esAdmin) { %>
   <div class="tab-content" id="tab-estadisticas">
     <div class="stats-grid" id="stats-cards"></div>
     <div class="chart-grid" id="stats-charts"></div>
   </div>
+  <% } %>
 </div>
 <div class="modal-overlay" id="modal-detalle"><div class="modal-box">
   <div class="modal-header"><span class="modal-title" id="modal-titulo">Detalle del Acta</span><button class="modal-close" onclick="cerrarModal()">&times;</button></div>
@@ -157,13 +158,18 @@ const userName='<%= (session.nagsa_name || session.nagsa_user || "").replace(/'/
 const esAdmin=<%= typeof esAdmin !== 'undefined' && esAdmin ? 'true' : 'false' %>;
 const apiListar=esAdmin?'/actas/api/listar':'/actas/api/mis-actas';
 
-function switchTab(tab){document.querySelectorAll('.tab').forEach((t,i)=>{const tabs=['registro','resguardo','estadisticas'];t.classList.toggle('active',tabs[i]===tab);});document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById('tab-'+tab).classList.add('active');if(tab==='registro')cargarActas();if(tab==='resguardo')cargarPendientes();if(tab==='estadisticas')cargarEstadisticas();}
+function switchTab(tab){document.querySelectorAll('.tab').forEach(t=>{t.classList.toggle('active',t.textContent.includes(tab==='resguardo'?'Aceptacion':tab==='registro'?'Registro':'Estadisticas'));});document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));const el=document.getElementById('tab-'+tab);if(el)el.classList.add('active');if(tab==='registro')cargarActas();if(tab==='resguardo')cargarPendientes();if(tab==='estadisticas')cargarEstadisticas();}
 
-async function cargarActas(){const params=new URLSearchParams();const b=document.getElementById('f-buscar').value.trim();const t=document.getElementById('f-tipo').value;const e=document.getElementById('f-estado').value;const d=document.getElementById('f-desde').value;const h=document.getElementById('f-hasta').value;if(b)params.set('buscar',b);if(t)params.set('tipo',t);if(e)params.set('estado',e);if(d)params.set('desde',d);if(h)params.set('hasta',h);const tbody=document.getElementById('tabla-actas');tbody.innerHTML='<tr class="empty-row"><td colspan="8">Cargando...</td></tr>';try{const data=await fetch(apiListar+'?'+params.toString()).then(r=>r.json());actasData=data;if(!data.length){tbody.innerHTML='<tr class="empty-row"><td colspan="8">No se encontraron actas.</td></tr>';return;}tbody.innerHTML=data.map(a=>{const persona=a.tipo==='entrega'?(a.recibido_por||'---'):(a.retira_persona||'---');const fechaF=new Date(a.fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'});return `<tr><td><strong>${a.numero}</strong></td><td><span class="badge badge-${a.tipo}">${a.tipo==='entrega'?'Entrega':'Salida'}</span></td><td>${fechaF}</td><td><small>${persona}</small></td><td style="text-align:center;font-weight:700;">${a.total_equipos}</td><td><span class="badge badge-${a.estado}">${a.estado.charAt(0).toUpperCase()+a.estado.slice(1)}</span></td><td><small>${a.created_by}</small></td><td><button class="btn-sm btn-view" onclick="verDetalle(${a.id})">&#128065; Ver</button> <button class="btn-sm btn-accept" onclick="verDetalle(${a.id},true)" ${a.estado!=='pendiente'?'disabled style="opacity:0.4;cursor:not-allowed"':''}>&#9989; Resguardo</button></td></tr>`;}).join('');}catch(e){tbody.innerHTML='<tr class="empty-row"><td colspan="8">Error: '+e.message+'</td></tr>';}}
+async function cargarActas(){const params=new URLSearchParams();const b=document.getElementById('f-buscar').value.trim();const t=document.getElementById('f-tipo').value;const d=document.getElementById('f-desde').value;const h=document.getElementById('f-hasta').value;if(b)params.set('buscar',b);if(t)params.set('tipo',t);if(d)params.set('desde',d);if(h)params.set('hasta',h);const tbody=document.getElementById('tabla-actas');tbody.innerHTML='<tr class="empty-row"><td colspan="7">Cargando...</td></tr>';try{const data=await fetch(apiListar+'?'+params.toString()).then(r=>r.json());actasData=data;const firmadas=data.filter(a=>a.estado!=='pendiente');if(!firmadas.length){tbody.innerHTML='<tr class="empty-row"><td colspan="7">No hay actas en el registro.</td></tr>';return;}tbody.innerHTML=firmadas.map(a=>{const persona=a.tipo==='entrega'?(a.recibido_por||'---'):(a.retira_persona||'---');const fechaF=new Date(a.fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'});const estadoBadge=a.estado==='aceptada'?'<span class="badge badge-aceptada">&#9989; Firmada</span>':'<span class="badge badge-rechazada">&#10060; Rechazada</span>';return `<tr><td><strong>${a.numero}</strong></td><td><span class="badge badge-${a.tipo}">${a.tipo==='entrega'?'Entrega':'Salida'}</span></td><td>${fechaF}</td><td><small>${persona}</small></td><td style="text-align:center;font-weight:700;">${a.total_equipos}</td><td>${estadoBadge}</td><td><button class="btn-sm btn-view" onclick="verDetalle(${a.id})">&#128065; Ver</button></td></tr>`;}).join('');}catch(e){tbody.innerHTML='<tr class="empty-row"><td colspan="7">Error: '+e.message+'</td></tr>';}}
 
-function limpiarFiltros(){['f-buscar','f-tipo','f-estado','f-desde','f-hasta'].forEach(id=>document.getElementById(id).value='');cargarActas();}
+function limpiarFiltros(){['f-buscar','f-tipo','f-desde','f-hasta'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});cargarActas();}
 
-async function cargarPendientes(){const tbody=document.getElementById('tabla-pendientes');tbody.innerHTML='<tr class="empty-row"><td colspan="7">Cargando...</td></tr>';try{const data=await fetch(apiListar+'?estado=pendiente').then(r=>r.json());if(!data.length){tbody.innerHTML='<tr class="empty-row"><td colspan="7">&#9989; No hay actas pendientes.</td></tr>';return;}tbody.innerHTML=data.map(a=>{const persona=a.tipo==='entrega'?(a.recibido_por||'---'):(a.retira_persona||'---');const fechaF=new Date(a.fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'});return `<tr><td><strong>${a.numero}</strong></td><td><span class="badge badge-${a.tipo}">${a.tipo==='entrega'?'Entrega':'Salida'}</span></td><td>${fechaF}</td><td><small>${persona}</small></td><td style="text-align:center;font-weight:700;">${a.total_equipos}</td><td><small>${a.created_by}</small></td><td><button class="btn-sm btn-accept" onclick="verDetalle(${a.id},true)">&#128221; Revisar</button></td></tr>`;}).join('');}catch(e){tbody.innerHTML='<tr class="empty-row"><td colspan="7">Error: '+e.message+'</td></tr>';}}
+async function cargarPendientes(){const tbody=document.getElementById('tabla-pendientes');tbody.innerHTML='<tr class="empty-row"><td colspan="8">Cargando...</td></tr>';try{const data=await fetch(apiListar+'?estado=pendiente').then(r=>r.json());if(!data.length){tbody.innerHTML='<tr class="empty-row"><td colspan="8">&#9989; No hay actas pendientes de firma.</td></tr>';return;}tbody.innerHTML=data.map(a=>{const persona=a.tipo==='entrega'?(a.recibido_por||'---'):(a.retira_persona||'---');const fechaF=new Date(a.fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'short',year:'numeric'});const diasPendiente=Math.floor((Date.now()-new Date(a.created_at).getTime())/(1000*60*60*24));const urgencia=diasPendiente>7?'color:#dc3545;font-weight:700;':diasPendiente>3?'color:#d39e00;':'color:var(--text-muted);';
+const estadoCol=`<span class="badge badge-pendiente">Pendiente de firmar</span><br><small style="${urgencia}">${diasPendiente} dia${diasPendiente!==1?'s':''}</small>`;
+const accionesCol=esAdmin?(a.tipo==='salida'?`<button class="btn-sm btn-view" onclick="verDetalle(${a.id},true)">&#128269; Revisar</button>`:`<button class="btn-sm" onclick="enviarRecordatorio(${a.id},'${persona.replace(/'/g,"\\'")}')" style="padding:5px 12px;border-radius:5px;border:1px solid rgba(255,152,0,0.3);background:rgba(255,152,0,0.1);color:#e65100;font-size:11px;font-weight:700;cursor:pointer;">&#128276; Notificar</button>`):`<button class="btn-sm btn-accept" onclick="verDetalle(${a.id},true)">&#9998; Firmar</button>`;
+return `<tr><td><strong>${a.numero}</strong></td><td><span class="badge badge-${a.tipo}">${a.tipo==='entrega'?'Entrega':'Salida'}</span></td><td>${fechaF}</td><td><small>${persona}</small></td><td style="text-align:center;font-weight:700;">${a.total_equipos}</td><td><small>${a.created_by}</small></td><td>${estadoCol}</td><td>${accionesCol}</td></tr>`;}).join('');}catch(e){tbody.innerHTML='<tr class="empty-row"><td colspan="8">Error: '+e.message+'</td></tr>';}}
+
+function enviarRecordatorio(id,persona){fetch('/actas/api/recordatorio',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}).then(r=>r.json()).then(d=>{if(d.ok)alert('Recordatorio enviado a '+persona);}).catch(()=>{});}
 
 async function verDetalle(id,modoResguardo=false){try{currentActa=await fetch('/actas/api/detalle?id='+id).then(r=>r.json());if(currentActa.error){alert(currentActa.error);return;}const a=currentActa;const fechaF=new Date(a.fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});const tipoLabel=a.tipo==='entrega'?'ACTA DE ENTREGA':'ACTA DE SALIDA';const logo=window.NAGSA_LOGO_ABS;const nombre=window.NAGSA_NOMBRE;const equipos=a.equipos||[];const eqRows=equipos.map((eq,i)=>`<tr><td style="text-align:center;font-weight:700;">${i+1}</td><td><strong>${eq.nombre||'---'}</strong></td><td>${eq.tipo||'---'}</td><td>${eq.fabricante||'---'}</td><td>${eq.modelo||'---'}</td><td>${eq.serie||'---'}</td></tr>`).join('');let datosHTML='';if(a.tipo==='entrega'){datosHTML=`<div class="acta-section"><div class="acta-section-title">Datos de Entrega</div><div class="acta-grid"><div class="acta-field"><span class="af-label">Entregado por</span><span class="af-value">${a.entregado_por||'---'}</span></div><div class="acta-field"><span class="af-label">Cargo</span><span class="af-value">${a.entregado_cargo||'---'}</span></div><div class="acta-field"><span class="af-label">Recibido por</span><span class="af-value">${a.recibido_por||'---'}</span></div><div class="acta-field"><span class="af-label">Cargo</span><span class="af-value">${a.recibido_cargo||'---'}</span></div></div></div>`;}else{datosHTML=`<div class="acta-section"><div class="acta-section-title">Datos de Salida</div><div class="acta-grid"><div class="acta-field"><span class="af-label">Autorizado por</span><span class="af-value">${a.autorizado_por||'---'}</span></div><div class="acta-field"><span class="af-label">Cargo</span><span class="af-value">${a.autorizado_cargo||'---'}</span></div><div class="acta-field"><span class="af-label">Motivo</span><span class="af-value">${a.motivo||'---'}</span></div><div class="acta-field"><span class="af-label">Destino</span><span class="af-value">${a.destino||'---'}</span></div><div class="acta-field"><span class="af-label">Retira</span><span class="af-value">${a.retira_persona||'---'}</span></div><div class="acta-field"><span class="af-label">Cargo</span><span class="af-value">${a.retira_cargo||'---'}</span></div></div></div>`;}
 let estadoInfo='';if(a.estado!=='pendiente'){const fa=a.aceptada_fecha?new Date(a.aceptada_fecha).toLocaleString('es-EC'):'---';const firmaImg=a.firma_digital?`<div style="margin-top:10px;padding:10px;background:#fff;border-radius:6px;border:1px solid #ddd;text-align:center;"><div style="font-size:9px;color:#888;margin-bottom:4px;text-transform:uppercase;font-weight:700;">Firma</div><img src="${a.firma_digital}" style="max-height:60px;object-fit:contain;" alt="Firma"></div>`:'';estadoInfo=`<div style="margin-top:12px;padding:12px;border-radius:8px;background:${a.estado==='aceptada'?'rgba(40,167,69,0.08)':'rgba(220,53,69,0.08)'};border:1px solid ${a.estado==='aceptada'?'rgba(40,167,69,0.3)':'rgba(220,53,69,0.3)'}"><strong style="color:${a.estado==='aceptada'?'#1e7e34':'#a71d2a'}">${a.estado==='aceptada'?'&#9989; ACEPTADA':'&#10060; RECHAZADA'}</strong><div style="font-size:11px;color:var(--text-sub);margin-top:4px;"><div>Por: <strong>${a.aceptada_por||'---'}</strong></div><div>Fecha: ${fa}</div>${a.aceptada_observaciones?'<div>Obs: '+a.aceptada_observaciones+'</div>':''}</div>${firmaImg}</div>`;}
@@ -238,7 +244,7 @@ const tu=stats.top_usuarios||[];const maxU=Math.max(...tu.map(u=>u.total),1);con
 document.getElementById('stats-charts').innerHTML=`<div class="chart-card"><h3>Por Tipo</h3><div class="bar-chart">${tc||'<p style="color:var(--text-muted);font-size:12px;">Sin datos</p>'}</div></div><div class="chart-card"><h3>Por Mes (6 meses)</h3><div class="bar-chart">${mc||'<p style="color:var(--text-muted);font-size:12px;">Sin datos</p>'}</div></div><div class="chart-card"><h3>Top Usuarios</h3><div class="bar-chart">${uc||'<p style="color:var(--text-muted);font-size:12px;">Sin datos</p>'}</div></div><div class="chart-card"><h3>Por Estado</h3><div class="bar-chart">${pe.map(e=>{const colors={pendiente:'#ffc107',aceptada:'#28a745',rechazada:'#dc3545'};const p=Math.round((e.total/Math.max(...pe.map(x=>x.total),1))*100);return `<div class="bar-row"><div class="bar-label">${e.estado.charAt(0).toUpperCase()+e.estado.slice(1)}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${colors[e.estado]||'#666'};">${e.total}</div></div></div>`;}).join('')||'<p style="color:var(--text-muted);font-size:12px;">Sin datos</p>'}</div></div>`;}catch(e){document.getElementById('stats-cards').innerHTML=`<div class="stat-card"><div class="stat-label">Error: ${e.message}</div></div>`;}}
 
 document.addEventListener('click',e=>{if(e.target.id==='modal-detalle')cerrarModal();});
-cargarActas();
+cargarPendientes();
 </script>
 </body>
 </html>

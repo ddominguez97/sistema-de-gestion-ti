@@ -287,6 +287,24 @@ router.get('/api/pendientes', requireLogin, (req, res) => {
   res.json({ count: pendientes.length, actas: pendientes.map(a => ({ id:a.id, numero:a.numero, tipo:a.tipo, fecha:a.fecha, total_equipos:a.total_equipos })) });
 });
 
+// POST /actas/api/recordatorio — marcar recordatorio enviado
+router.post('/api/recordatorio', requireLogin, (req, res) => {
+  const id = parseInt(req.body.id);
+  if (!id) return res.status(400).json({ error: 'ID requerido' });
+  const data = loadData();
+  const now = new Date().toISOString().replace('T',' ').slice(0,19);
+  for (const acta of data.actas) {
+    if (acta.id === id && acta.estado === 'pendiente') {
+      if (!acta.recordatorios) acta.recordatorios = [];
+      acta.recordatorios.push({ fecha: now, enviado_por: req.session.nagsa_user });
+      acta.ultimo_recordatorio = now;
+      saveData(data);
+      return res.json({ ok: true });
+    }
+  }
+  res.status(404).json({ error: 'Acta no encontrada o ya procesada' });
+});
+
 // GET /actas/api/estadisticas
 router.get('/api/estadisticas', requireLogin, (req, res) => {
   const data = loadData();
