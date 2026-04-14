@@ -164,14 +164,17 @@ router.post('/api/guardar', requireLogin, (req, res) => {
     estado_equipo: input.estado_equipo || null,
     entregado_por: input.entregado_por || null,
     entregado_cargo: input.entregado_cargo || null,
+    entregado_username: input.entregado_username || null,
     recibido_por: input.recibido_por || null,
     recibido_cargo: input.recibido_cargo || null,
+    recibido_username: input.recibido_username || null,
     autorizado_por: input.autorizado_por || null,
     autorizado_cargo: input.autorizado_cargo || null,
     motivo: input.motivo || null,
     destino: input.destino || null,
     retira_persona: input.retira_persona || null,
     retira_cargo: input.retira_cargo || null,
+    retira_username: input.retira_username || null,
     observaciones: input.observaciones || null,
     equipos: input.equipos || [],
     total_equipos: (input.equipos || []).length,
@@ -249,6 +252,39 @@ router.post('/api/resguardo', requireLogin, (req, res) => {
   if (!found) return res.status(409).json({ error: 'El acta ya fue procesada o no existe' });
   saveData(data);
   res.json({ ok: true });
+});
+
+// GET /actas/api/mis-actas — actas del usuario logueado
+router.get('/api/mis-actas', requireLogin, (req, res) => {
+  const user = (req.session.nagsa_user || '').toLowerCase();
+  const data = loadData();
+  const misActas = data.actas.filter(a => {
+    return (a.recibido_username || '').toLowerCase() === user
+      || (a.retira_username || '').toLowerCase() === user
+      || (a.entregado_username || '').toLowerCase() === user;
+  });
+  misActas.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const result = misActas.map(a => ({
+    id:a.id, numero:a.numero, tipo:a.tipo, fecha:a.fecha, lugar:a.lugar,
+    destino:a.destino||'oficina',
+    entregado_por:a.entregado_por, recibido_por:a.recibido_por,
+    autorizado_por:a.autorizado_por, retira_persona:a.retira_persona,
+    total_equipos:a.total_equipos, estado:a.estado,
+    created_by:a.created_by, created_at:a.created_at,
+  }));
+  res.json(result);
+});
+
+// GET /actas/api/pendientes — actas pendientes de firma del usuario
+router.get('/api/pendientes', requireLogin, (req, res) => {
+  const user = (req.session.nagsa_user || '').toLowerCase();
+  const data = loadData();
+  const pendientes = data.actas.filter(a => {
+    if (a.estado !== 'pendiente') return false;
+    return (a.recibido_username || '').toLowerCase() === user
+      || (a.retira_username || '').toLowerCase() === user;
+  });
+  res.json({ count: pendientes.length, actas: pendientes.map(a => ({ id:a.id, numero:a.numero, tipo:a.tipo, fecha:a.fecha, total_equipos:a.total_equipos })) });
 });
 
 // GET /actas/api/estadisticas

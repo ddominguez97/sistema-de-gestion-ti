@@ -24,9 +24,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Session
+// Session - generar secret automaticamente si no existe
+const { loadConfig: loadCfg, saveConfig: saveCfg } = require('./config/config');
+const sessionSecret = (() => {
+  try {
+    const cfg = loadCfg();
+    if (!cfg.session_secret) {
+      const crypto = require('crypto');
+      cfg.session_secret = crypto.randomBytes(32).toString('hex');
+      saveCfg(cfg);
+      console.log('Session secret generado automaticamente.');
+    }
+    return cfg.session_secret;
+  } catch { return require('crypto').randomBytes(32).toString('hex'); }
+})();
 app.use(session({
-  secret: 'sistema-ng-secret-2024',
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 4 * 60 * 60 * 1000 }, // 4 horas
@@ -58,6 +71,7 @@ app.get('/proximamente', (req, res) => {
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));
 app.use('/etiquetas', require('./routes/etiquetas'));
+app.use('/etiquetas/print', require('./routes/etiquetas-print'));
 app.use('/actas', require('./routes/actas'));
 app.use('/reportes', require('./routes/reportes'));
 

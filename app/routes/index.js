@@ -8,7 +8,15 @@ router.get('/', async (req, res) => {
   if (req.session.nagsa_user) {
     const cfg = res.locals.cfg;
     const modulos = cfg.modulos || {};
-    return res.render('dashboard', { modulos });
+    // Determinar si ve el icono de admin
+    let showAdmin = false;
+    if (req.session.nagsa_auth === 'glpi') showAdmin = true;
+    else if (req.session.admin_ok) showAdmin = true;
+    else {
+      const adminUsers = (cfg.admin_users || []).map(u => u.toLowerCase());
+      if (adminUsers.includes(req.session.nagsa_user.toLowerCase())) showAdmin = true;
+    }
+    return res.render('dashboard', { modulos, showAdmin });
   }
   res.render('login', { error: null });
 });

@@ -6,7 +6,10 @@ const fs = require('fs');
 const { loadConfig, saveConfig, ROOT_PATH } = require('../config/config');
 const { getGLPILdapConfig } = require('../middleware/auth');
 
-const ADMIN_PASS = 'GLPIM853@UYT';
+function getAdminPass() {
+  const cfg = loadConfig();
+  return cfg.admin_pass || 'admin';
+}
 
 // Logo upload config
 const storage = multer.diskStorage({
@@ -24,29 +27,98 @@ const upload = multer({
   }
 });
 
+// Verificar si el usuario tiene acceso al admin
+function tieneAccesoAdmin(session) {
+  const cfg = loadConfig();
+  const hayBD = !!(cfg.db_host);
+
+  // Sin BD configurada: cualquiera puede entrar con contrasena (primera vez)
+  if (!hayBD) return 'password';
+
+  if (!session || !session.nagsa_user) return 'password'; // no logueado, pide contrasena
+  if (session.admin_ok) return 'full'; // ya autenticado en admin
+  if (session.nagsa_auth === 'glpi') return 'full'; // super admin GLPI, directo
+  // Verificar si esta en la lista de admin_users
+  const adminUsers = (cfg.admin_users || []).map(u => u.toLowerCase());
+  if (adminUsers.includes(session.nagsa_user.toLowerCase())) return 'password';
+  return 'none'; // sin permiso
+}
+
+// Generar clave aleatoria
+function generarClave() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let clave = '';
+  for (let i = 0; i < 8; i++) clave += chars.charAt(Math.floor(Math.random() * chars.length));
+  return clave;
+}
+
 // GET /admin
 router.get('/', async (req, res) => {
   const cfg = loadConfig();
+
+  // Primera vez: no hay contrasena, mostrar setup
+  if (!cfg.admin_pass) {
+    const tempKey = generarClave();
+    return res.render('admin', {
+      loggedIn: false, firstTime: true, tempKey,
+      msg: null, msgType: 'ok', cfg, show: cfg.show || {},
+      ad: cfg.active_directory || {}, glpiLdap: null, adminUsers: [],
+    });
+  }
+
+  const acceso = tieneAccesoAdmin(req.session);
+
+  // Sin permiso: redirigir al dashboard
+  if (acceso === 'none') return res.redirect('/');
+
+  // GLPI super admin: marcar admin_ok automaticamente
+  if (acceso === 'full' && !req.session.admin_ok) {
+    req.session.admin_ok = true;
+  }
+
   const show = cfg.show || {};
   const ad = cfg.active_directory || {};
   const msg = req.session.admin_msg || null;
   const msgType = req.session.admin_msg_type || 'ok';
   delete req.session.admin_msg;
   delete req.session.admin_msg_type;
-  // Detectar LDAP de GLPI para mostrar info en la tarjeta AD
+
   let glpiLdap = null;
   if (req.session.admin_ok) {
     try { glpiLdap = await getGLPILdapConfig(); } catch {}
   }
+
   res.render('admin', {
-    loggedIn: !!req.session.admin_ok,
+    loggedIn: !!req.session.admin_ok, firstTime: false,
     msg, msgType, cfg, show, ad, glpiLdap,
+    adminUsers: cfg.admin_users || [],
   });
+});
+
+// POST /admin/setup — primera vez, crear contrasena
+router.post('/setup', (req, res) => {
+  const cfg = loadConfig();
+  if (cfg.admin_pass) return res.redirect('/admin'); // ya tiene contrasena
+  const nueva = (req.body.new_password || '').trim();
+  if (!nueva || nueva.length < 6) {
+    req.session.admin_msg = 'La contrasena debe tener al menos 6 caracteres.';
+    req.session.admin_msg_type = 'err';
+    return res.redirect('/admin');
+  }
+  cfg.admin_pass = nueva;
+  saveConfig(cfg);
+  req.session.admin_ok = true;
+  req.session.admin_msg = 'Contrasena creada. Ya puedes configurar el sistema.';
+  res.redirect('/admin');
 });
 
 // POST /admin — login
 router.post('/login', (req, res) => {
-  if (req.body.password === ADMIN_PASS) {
+  const acceso = tieneAccesoAdmin(req.session);
+  if (acceso === 'none') return res.redirect('/');
+  if (acceso === 'full') { req.session.admin_ok = true; return res.redirect('/admin'); }
+  // Verificar contrasena
+  if (req.body.password === getAdminPass()) {
     req.session.admin_ok = true;
   } else {
     req.session.admin_msg = 'Contrasena incorrecta.';
@@ -195,6 +267,18 @@ router.post('/cambiar-tema', (req, res) => {
   cfg.empresa_tema = (req.body.empresa_tema || 'oscuro').trim();
   saveConfig(cfg);
   res.json({ ok: true, tema: cfg.empresa_tema });
+});
+
+// POST /admin/save-admin-users
+router.post('/save-admin-users', (req, res) => {
+  if (!req.session.admin_ok) return res.redirect('/admin');
+  const cfg = loadConfig();
+  let users = req.body['admin_users[]'] || req.body['admin_users'] || [];
+  if (typeof users === 'string') users = [users];
+  cfg.admin_users = users.filter(u => u.trim()).map(u => u.trim());
+  saveConfig(cfg);
+  req.session.admin_msg = 'Administradores guardados.';
+  res.redirect('/admin');
 });
 
 // GET /admin/debug-user — ver campos de usuario en GLPI (solo admin)

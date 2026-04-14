@@ -185,8 +185,9 @@ function abrirModalManual(){['m-nombre','m-tipo','m-fabricante','m-modelo','m-se
 function cerrarModal(){document.getElementById('modal-manual').classList.remove('active');}
 function agregarManual(){const nombre=document.getElementById('m-nombre').value.trim();if(!nombre){alert('Nombre obligatorio.');return;}const selE=document.getElementById('m-estado');equipos.push({nombre,tipo:document.getElementById('m-tipo').value.trim(),fabricante:document.getElementById('m-fabricante').value.trim(),modelo:document.getElementById('m-modelo').value.trim(),serie:document.getElementById('m-serie').value.trim(),estado:selE.options[selE.selectedIndex]?.text||''});cerrarModal();renderEquipos();}
 
-function buscarUsuario(input,campo){clearTimeout(userTimeout[campo]);const q=input.value.trim();const res=document.getElementById('results-'+campo);if(q.length<2){res.style.display='none';return;}userTimeout[campo]=setTimeout(async()=>{try{const data=await fetch('/actas/api/usuarios?q='+encodeURIComponent(q)).then(r=>r.json());if(!data.length){res.style.display='none';return;}res.innerHTML=data.map(u=>`<div class="user-item" onclick="seleccionarUsuario('${campo}','${u.fullname.replace(/'/g,"\\'")}')">${u.fullname}<div style="color:var(--text-muted);font-size:11px;">${u.name}</div></div>`).join('');res.style.display='block';}catch(e){}},300);}
-function seleccionarUsuario(campo,nombre){document.getElementById('search-'+campo).value=nombre;document.getElementById('results-'+campo).style.display='none';}
+function buscarUsuario(input,campo){clearTimeout(userTimeout[campo]);const q=input.value.trim();const res=document.getElementById('results-'+campo);if(q.length<2){res.style.display='none';return;}userTimeout[campo]=setTimeout(async()=>{try{const data=await fetch('/actas/api/usuarios?q='+encodeURIComponent(q)).then(r=>r.json());if(!data.length){res.style.display='none';return;}res.innerHTML=data.map(u=>`<div class="user-item" onclick="seleccionarUsuario('${campo}','${u.fullname.replace(/'/g,"\\'")}','${u.name.replace(/'/g,"\\'")}')">${u.fullname}<div style="color:var(--text-muted);font-size:11px;">${u.name}</div></div>`).join('');res.style.display='block';}catch(e){}},300);}
+const usernames={entrega:'',recibe:'',autoriza:'',retira:''};
+function seleccionarUsuario(campo,nombre,username){document.getElementById('search-'+campo).value=nombre;document.getElementById('results-'+campo).style.display='none';if(username)usernames[campo]=username;}
 
 document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))document.getElementById('search-results').style.display='none';if(!e.target.closest('.user-wrap'))document.querySelectorAll('.user-results').forEach(r=>r.style.display='none');});
 
@@ -230,13 +231,19 @@ function generarActa(){
   if(tipoActa==='entrega'){
     datos.entregado_por=document.getElementById('search-entrega').value.trim();
     datos.entregado_cargo=document.getElementById('acta-entrega-cargo').value;
+    datos.entregado_username=usernames.entrega;
     datos.recibido_por=document.getElementById('search-recibe').value.trim();
     datos.recibido_cargo=document.getElementById('acta-recibe-cargo').value;
+    datos.recibido_username=usernames.recibe;
   } else {
+    datos.entregado_por=document.getElementById('search-entrega').value.trim();
+    datos.entregado_cargo=document.getElementById('acta-entrega-cargo').value;
+    datos.entregado_username=usernames.entrega;
     datos.autorizado_por=datos.entregado_por;
     datos.autorizado_cargo=datos.entregado_cargo;
     datos.motivo=document.getElementById('acta-motivo').value;
     datos.retira_persona=document.getElementById('search-retira').value.trim();
+    datos.retira_username=usernames.retira;
     datos.retira_cargo=document.getElementById('acta-retira-cargo').value;
   }
   fetch('/actas/api/guardar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(datos)}).then(r=>r.json()).then(d=>{if(d.ok)console.log('Acta guardada:',d.numero);}).catch(e=>console.warn('Error guardando:',e));

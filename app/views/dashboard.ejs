@@ -45,7 +45,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
     <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;" id="tema-btn"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
-    <a href="/admin" title="Configuracion">&#x2699;&#xFE0F;</a>
+    <% if (typeof showAdmin !== 'undefined' && showAdmin) { %><a href="/admin" title="Configuracion">&#x2699;&#xFE0F;</a><% } %>
     <a href="/logout">Salir</a>
   </div>
 </div>
@@ -53,6 +53,9 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="welcome">
     <h1>Bienvenido, <%= session.nagsa_firstname || (session.nagsa_name || session.nagsa_user).split(' ')[0] %></h1>
     <p>Selecciona el modulo con el que deseas trabajar.</p>
+    <div id="notif-pendientes" style="display:none;margin-top:12px;padding:12px 16px;border-radius:8px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);cursor:pointer;" onclick="window.location='/reportes'">
+      <span style="font-size:13px;color:#d39e00;font-weight:700;" id="notif-texto"></span>
+    </div>
   </div>
 <%
 const todosModulos = {
@@ -113,6 +116,14 @@ function renderCards(grupo, estado) {
 <% } %>
 </div>
 <script>
+// Verificar actas pendientes
+fetch('/actas/api/pendientes').then(r=>r.json()).then(data=>{
+  if(data.count>0){
+    document.getElementById('notif-pendientes').style.display='block';
+    document.getElementById('notif-texto').textContent='Tienes '+data.count+' acta'+(data.count>1?'s':'')+' pendiente'+(data.count>1?'s':'')+' de firmar';
+  }
+}).catch(()=>{});
+
 function toggleTema(){
   const actual='<%= branding.tema %>';
   const nuevo=actual==='oscuro'?'claro':'oscuro';

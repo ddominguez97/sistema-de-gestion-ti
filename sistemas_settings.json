@@ -1,4 +1,7 @@
 {
+    "admin_pass": "GLPIM853@UYT",
+    "admin_users": [],
+    "session_secret": "sistema-ng-secret-2024",
     "db_host": "192.168.104.193",
     "db_port": "3306",
     "db_name": "glpidb",

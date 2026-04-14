@@ -16,7 +16,9 @@ router.get('/', (req, res) => {
   const cfg = res.locals.cfg;
   const blocked = checkModulo(cfg, 'reportes', req);
   if (blocked) return res.render('proximamente', { titulo: 'Reportes y Estadisticas' });
-  res.render('reportes');
+  // Determinar si es admin (ve todo) o usuario normal (ve solo las suyas)
+  const esAdmin = req.session.nagsa_auth === 'glpi' || req.session.admin_ok;
+  res.render('reportes', { esAdmin });
 });
 
 // Proximamente route

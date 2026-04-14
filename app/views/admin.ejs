@@ -70,7 +70,28 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   </div>
 </div>
 
-<% if (!loggedIn) { %>
+<% if (typeof firstTime !== 'undefined' && firstTime) { %>
+<div class="login-wrap">
+  <div class="login-card" style="max-width:420px;">
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:48px;margin-bottom:8px;">&#128272;</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text-main);">Configuracion Inicial</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Primera vez que accedes al sistema</div>
+    </div>
+    <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
+    <div style="padding:12px;border-radius:8px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);margin-bottom:16px;">
+      <div style="font-size:11px;color:#d39e00;font-weight:700;margin-bottom:4px;">Clave temporal generada:</div>
+      <div style="font-size:20px;font-weight:900;color:var(--text-main);letter-spacing:2px;text-align:center;padding:8px 0;font-family:monospace;"><%= typeof tempKey !== 'undefined' ? tempKey : '' %></div>
+      <div style="font-size:10px;color:var(--text-muted);">Guarda esta clave como respaldo. Ahora crea tu propia contrasena.</div>
+    </div>
+    <form method="POST" action="/admin/setup">
+      <div class="fg"><label>Nueva contrasena (minimo 6 caracteres)</label><input type="password" name="new_password" placeholder="Tu nueva contrasena" autofocus required minlength="6" style="padding:9px 12px;"></div>
+      <div class="fg"><label>Confirmar contrasena</label><input type="password" id="confirm_pass" placeholder="Repite la contrasena" required style="padding:9px 12px;"></div>
+      <button type="submit" onclick="if(this.form.new_password.value!==document.getElementById('confirm_pass').value){alert('Las contrasenas no coinciden');return false;}" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Crear contrasena y continuar</button>
+    </form>
+  </div>
+</div>
+<% } else if (!loggedIn) { %>
 <div class="login-wrap">
   <div class="login-card">
     <div style="text-align:center;margin-bottom:20px;">
@@ -236,8 +257,8 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
   </div>
 
-  <!-- Fila 3: Modulos | Categorias -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+  <!-- Fila 3: Modulos | Categorias | Administradores -->
+  <div class="grid3">
 
     <!-- Estado de modulos -->
     <form method="POST" action="/admin/save-modulos" class="card">
@@ -263,19 +284,46 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
       <div class="ch"><div class="ci" style="background:#F0E8FF;">&#128203;</div><div><div class="ct">Categorias a Mostrar</div><div class="cd">Visibles en el modulo de etiquetas</div></div></div>
       <div class="cb">
         <div class="cats">
-          <label class="cat-item"><input type="checkbox" name="show_comp" <%= show.computadoras ? 'checked' : '' %>> &#128187; Computadoras</label>
-          <label class="cat-item"><input type="checkbox" name="show_mon" <%= show.monitores ? 'checked' : '' %>> &#128421; Monitores</label>
-          <label class="cat-item"><input type="checkbox" name="show_imp" <%= show.impresoras ? 'checked' : '' %>> &#128424; Impresoras</label>
-          <label class="cat-item"><input type="checkbox" name="show_per" <%= show.perifericos ? 'checked' : '' %>> &#128433; Perifericos</label>
-          <label class="cat-item"><input type="checkbox" name="show_red" <%= show.redes ? 'checked' : '' %>> &#127760; Disp. de Red</label>
-          <label class="cat-item"><input type="checkbox" name="show_gab" <%= show.gabinetes ? 'checked' : '' %>> &#128452; Gabinetes</label>
-          <label class="cat-item"><input type="checkbox" name="show_pas" <%= show.pasivos ? 'checked' : '' %>> &#128268; Disp. Pasivos</label>
-          <label class="cat-item"><input type="checkbox" name="show_car" <%= show.cartuchos ? 'checked' : '' %>> &#129656; Cartuchos</label>
-          <label class="cat-item"><input type="checkbox" name="show_con" <%= show.consumibles ? 'checked' : '' %>> &#128230; Consumibles</label>
-          <label class="cat-item"><input type="checkbox" name="show_tel" <%= show.telefonos ? 'checked' : '' %>> &#128241; Telefonos</label>
+          <label class="cat-item"><input type="checkbox" name="show_comp" <%= show.computadoras ? 'checked' : '' %>> &#x1F4BB; Computadoras</label>
+          <label class="cat-item"><input type="checkbox" name="show_mon" <%= show.monitores ? 'checked' : '' %>> &#x1F5A5; Monitores</label>
+          <label class="cat-item"><input type="checkbox" name="show_imp" <%= show.impresoras ? 'checked' : '' %>> &#x1F5A8;&#xFE0F; Impresoras</label>
+          <label class="cat-item"><input type="checkbox" name="show_per" <%= show.perifericos ? 'checked' : '' %>> &#x1F5B1; Perifericos</label>
+          <label class="cat-item"><input type="checkbox" name="show_red" <%= show.redes ? 'checked' : '' %>> &#x1F310; Disp. de Red</label>
+          <label class="cat-item"><input type="checkbox" name="show_gab" <%= show.gabinetes ? 'checked' : '' %>> &#x1F5C4; Gabinetes</label>
+          <label class="cat-item"><input type="checkbox" name="show_pas" <%= show.pasivos ? 'checked' : '' %>> &#x1F50C; Disp. Pasivos</label>
+          <label class="cat-item"><input type="checkbox" name="show_car" <%= show.cartuchos ? 'checked' : '' %>> &#x1FA78; Cartuchos</label>
+          <label class="cat-item"><input type="checkbox" name="show_con" <%= show.consumibles ? 'checked' : '' %>> &#x1F4E6; Consumibles</label>
+          <label class="cat-item"><input type="checkbox" name="show_tel" <%= show.telefonos ? 'checked' : '' %>> &#x1F4F1; Telefonos</label>
         </div>
       </div>
       <div class="cf"><button type="submit" class="bs">Guardar categorias</button></div>
+    </form>
+
+
+
+    <form method="POST" action="/admin/save-admin-users" class="card">
+      <div class="ch"><div class="ci" style="background:rgba(156,39,176,0.15);color:#9c27b0;">&#128101;</div><div><div class="ct">Administradores</div><div class="cd">Usuarios con acceso al panel</div></div></div>
+      <div class="cb">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Agrega usuarios que necesiten acceso al panel. Ingresaran con la contrasena de administrador.<br><% if (!cfg.db_host) { %><span style="color:#d39e00;">Configura primero la conexion a la BD de GLPI para buscar usuarios.</span><% } %></div>
+        <div id="admin-users-list" style="margin-bottom:10px;">
+          <% const au = typeof adminUsers !== 'undefined' ? adminUsers : []; %>
+          <% if (au.length === 0) { %>
+          <div id="no-admin-users" style="font-size:12px;color:var(--text-muted);padding:8px 0;">No hay usuarios con permiso de administrador.</div>
+          <% } %>
+          <% for (let i = 0; i < au.length; i++) { %>
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:13px;color:var(--text-main);flex:1;"><%= au[i] %></span>
+            <input type="hidden" name="admin_users[]" value="<%= au[i] %>">
+            <button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;">&#10005;</button>
+          </div>
+          <% } %>
+        </div>
+        <div style="position:relative;">
+          <input type="text" id="new-admin-user" placeholder="Buscar usuario..." autocomplete="off" oninput="buscarAdminUser(this.value)" style="width:100%;padding:7px 9px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;">
+          <div id="admin-user-results" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.15);"></div>
+        </div>
+      </div>
+      <div class="cf"><button type="submit" class="bs">Guardar administradores</button></div>
     </form>
 
   </div>
@@ -322,6 +370,40 @@ function subirLogo() {
       }
     })
     .catch(() => { msgEl.style.color = 'red'; msgEl.textContent = 'Error de conexion.'; });
+}
+
+// Buscar y agregar usuario admin
+let adminSearchTimeout=null;
+function buscarAdminUser(q){
+  clearTimeout(adminSearchTimeout);
+  const results=document.getElementById('admin-user-results');
+  if(q.length<2){results.style.display='none';return;}
+  adminSearchTimeout=setTimeout(async()=>{
+    try{
+      const data=await fetch('/admin/debug-user?q='+encodeURIComponent(q)).then(r=>r.json());
+      const users=data.usuarios||[];
+      if(!users.length){results.style.display='none';return;}
+      results.innerHTML=users.map(u=>{
+        const tipo=u.authtype===1?'GLPI':u.authtype===2?'LDAP':u.authtype===3?'AD':'Otro';
+        return `<div style="padding:7px 10px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;transition:background 0.1s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''" onclick="seleccionarAdminUser('${u.name.replace(/'/g,"\\'")}','${(u.firstname||'').replace(/'/g,"\\'")} ${(u.realname||'').replace(/'/g,"\\'")}')"><div style="font-weight:700;">${u.name}</div><div style="font-size:10px;color:var(--text-muted);">${(u.firstname||'')} ${(u.realname||'')} | ${tipo}</div></div>`;
+      }).join('');
+      results.style.display='block';
+    }catch(e){results.style.display='none';}
+  },300);
+}
+function seleccionarAdminUser(username,fullname){
+  const list=document.getElementById('admin-users-list');
+  const noUsers=document.getElementById('no-admin-users');
+  if(noUsers)noUsers.remove();
+  // Verificar duplicado
+  const existing=list.querySelectorAll('input[name="admin_users[]"]');
+  for(const inp of existing){if(inp.value.toLowerCase()===username.toLowerCase())return;}
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);';
+  div.innerHTML=`<span style="font-size:13px;color:var(--text-main);flex:1;"><strong>${username}</strong> <small style="color:var(--text-muted);">${fullname.trim()}</small></span><input type="hidden" name="admin_users[]" value="${username}"><button type="button" onclick="this.parentElement.remove()" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:16px;">&#10005;</button>`;
+  list.appendChild(div);
+  document.getElementById('new-admin-user').value='';
+  document.getElementById('admin-user-results').style.display='none';
 }
 
 // Buscar impresora en GLPI
