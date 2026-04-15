@@ -74,6 +74,7 @@ app.use('/etiquetas', require('./routes/etiquetas'));
 app.use('/etiquetas/print', require('./routes/etiquetas-print'));
 app.use('/actas', require('./routes/actas'));
 app.use('/reportes', require('./routes/reportes'));
+app.use('/permisos', require('./routes/permisos'));
 
 app.listen(PORT, () => {
   console.log(`Sistema NG corriendo en http://localhost:${PORT}`);

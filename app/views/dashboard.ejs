@@ -63,8 +63,12 @@ const todosModulos = {
   actas:       { url:'/actas', icono:'\u{1F4CB}', titulo:'Actas de Equipos', desc:'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.', footer:'Entrega - Salida - Impresion / PDF' },
   reportes:    { url:'/reportes', icono:'\u{1F4CA}', titulo:'Reportes y Estadisticas', desc:'Registro de actas de entrega y salida, aceptacion/resguardo, estadisticas por periodo.', footer:'Registro actas - Aceptacion / Resguardo - Estadisticas' },
   inversiones: { url:'/proximamente?m=inversiones', icono:'\u{1F4B0}', titulo:'Formato de Inversion', desc:'Solicitudes de compra, inversion por empresa y seguimiento de adquisiciones.', footer:'Compras - Inversion - Por entidad' },
-  permisos:    { url:'/proximamente?m=permisos', icono:'\u{1F514}', titulo:'Permisos y Notificaciones', desc:'Permisos por perfil de GLPI para cada modulo, notificaciones por correo y alertas.', footer:'Permisos - Notificaciones - Perfiles GLPI' },
+  permisos:    { url:'/permisos', icono:'\u{1F514}', titulo:'Permisos y Notificaciones', desc:'Gestiona permisos de acceso por usuario y grupo, notificaciones y alertas.', footer:'Permisos - Grupos - Usuarios' },
 };
+
+// Filtrar modulos segun permisos del usuario
+const pUser = typeof permisosUser !== 'undefined' ? permisosUser : {};
+const nInfo = typeof nivelInfo !== 'undefined' ? nivelInfo : { nivel: 4 };
 
 function getEstado(m) { return (modulos && modulos[m]) || 'deshabilitado'; }
 function getBadge(estado) {
@@ -75,7 +79,11 @@ function getBadge(estado) {
 
 const grActivo = {}, grPruebas = {}, grDeshabilitado = {};
 for (const [key, mod] of Object.entries(todosModulos)) {
+  // Verificar si el usuario tiene permiso para ver este modulo
+  if (nInfo.nivel > 2 && !pUser[key]) continue;
   const estado = getEstado(key);
+  // Modulos en pruebas: N1/N2 siempre, N3/N4 solo si tienen permiso explicito
+  if (estado === 'pruebas' && nInfo.nivel > 2 && !pUser[key]) continue;
   if (estado === 'activo') grActivo[key] = mod;
   else if (estado === 'pruebas') grPruebas[key] = mod;
   else grDeshabilitado[key] = mod;

@@ -18,10 +18,37 @@
 }
 body { background: var(--bg-body) !important; color: var(--text-main) !important; }
 </style>
+<style>
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+.toast{padding:12px 20px;border-radius:8px;font-size:12px;font-weight:600;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);animation:toastIn 0.3s ease,toastOut 0.3s ease 2.7s forwards;max-width:350px;pointer-events:auto;}
+.toast-success{background:#1e7e34;}
+.toast-error{background:#dc3545;}
+.toast-info{background:#0056b3;}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:translateX(0);}}
+@keyframes toastOut{from{opacity:1;}to{opacity:0;transform:translateY(-10px);}}
+</style>
 <script>
 window.NAGSA_COLOR  = '<%= branding.color %>';
 window.NAGSA_LOGO   = '<%= branding.logo %>';
 window.NAGSA_NOMBRE = '<%= branding.nombre %>';
 window.NAGSA_TEMA   = '<%= branding.tema %>';
 window.NAGSA_URL    = '<%= glpiUrl %>';
+
+// Toast global
+(function(){
+  var c = document.createElement('div');
+  c.className = 'toast-container';
+  c.id = 'toast-container';
+  document.addEventListener('DOMContentLoaded', function(){ document.body.appendChild(c); });
+  window.toast = function(msg, tipo) {
+    tipo = tipo || 'success';
+    var el = document.createElement('div');
+    el.className = 'toast toast-' + tipo;
+    el.textContent = msg;
+    var container = document.getElementById('toast-container');
+    if (!container) { document.body.appendChild(c); container = c; }
+    container.appendChild(el);
+    setTimeout(function(){ if (el.parentNode) el.remove(); }, 3000);
+  };
+})();
 </script>

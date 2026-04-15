@@ -38,9 +38,9 @@
     "modulos": {
         "etiquetas": "activo",
         "actas": "activo",
-        "reportes": "pruebas",
+        "reportes": "activo",
         "inversiones": "deshabilitado",
-        "permisos": "deshabilitado"
+        "permisos": "pruebas"
     },
     "stitch": {
         "habilitado": true,
@@ -58,5 +58,74 @@
         "dominio": "",
         "base_dn": "",
         "sufijo_usuario": ""
+    },
+    "permisos_config": {
+        "ti_usuarios": {
+            "christian.lopez": {
+                "nombre": "Christian Lopez",
+                "admin_panel": true,
+                "puede_delegar": true
+            },
+            "jonathan.perez": {
+                "nombre": "Jonathan Perez",
+                "admin_panel": true,
+                "puede_delegar": true
+            },
+            "joaquin.cabrera": {
+                "nombre": "Joaquin Cabrera",
+                "admin_panel": false,
+                "puede_delegar": true
+            },
+            "darwin.dominguez": {
+                "nombre": "Darwin Dominguez",
+                "admin_panel": true,
+                "puede_delegar": true
+            }
+        },
+        "grupos": {
+            "1": {
+                "nombre": "Manufatura",
+                "jefe": "",
+                "jefe_nombre": "",
+                "miembros": [
+                    {
+                        "username": "dc.mecanizado",
+                        "nombre": "dc.mecanizado"
+                    }
+                ],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "jefes": [
+                    {
+                        "username": "exar.lamota",
+                        "nombre": "Exar Lamota"
+                    },
+                    {
+                        "username": "luis.lascano",
+                        "nombre": "Luis Lascano"
+                    },
+                    {
+                        "username": "erick.tumbaco",
+                        "nombre": "Erick Tumbaco"
+                    }
+                ]
+            },
+            "2": {
+                "nombre": "Pintura",
+                "jefe": "luis.haro",
+                "jefe_nombre": "Luis Carlos Haro",
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                }
+            }
+        },
+        "usuarios_nivel": {},
+        "ti_nombre_area": "NAGSA IT"
     }
 }

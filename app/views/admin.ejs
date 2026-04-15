@@ -87,7 +87,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <form method="POST" action="/admin/setup">
       <div class="fg"><label>Nueva contrasena (minimo 6 caracteres)</label><input type="password" name="new_password" placeholder="Tu nueva contrasena" autofocus required minlength="6" style="padding:9px 12px;"></div>
       <div class="fg"><label>Confirmar contrasena</label><input type="password" id="confirm_pass" placeholder="Repite la contrasena" required style="padding:9px 12px;"></div>
-      <button type="submit" onclick="if(this.form.new_password.value!==document.getElementById('confirm_pass').value){alert('Las contrasenas no coinciden');return false;}" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Crear contrasena y continuar</button>
+      <button type="submit" onclick="if(this.form.new_password.value!==document.getElementById('confirm_pass').value){toast('Las contrasenas no coinciden','error');return false;}" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Crear contrasena y continuar</button>
     </form>
   </div>
 </div>

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Permisos &mdash; <%= branding.nombre %></title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
+.topbar{background:var(--bg-topbar);border-bottom:2px solid var(--color-principal);padding:12px 24px;display:flex;align-items:center;gap:16px;}
+.topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.topbar .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-sub);}
+.topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
+.container{max-width:1100px;margin:24px auto;padding:0 20px;}
+
+/* Nivel badge */
+.nivel-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:20px;}
+.nivel-1{background:rgba(220,53,69,0.15);color:#dc3545;border:1px solid rgba(220,53,69,0.3);}
+.nivel-2{background:rgba(0,123,255,0.12);color:#0056b3;border:1px solid rgba(0,123,255,0.3);}
+.nivel-3{background:rgba(40,167,69,0.12);color:#1e7e34;border:1px solid rgba(40,167,69,0.3);}
+
+/* Sections */
+.section{margin-bottom:28px;}
+.section-title{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--color-principal);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.card{background:var(--bg-card);border-radius:10px;padding:20px;border:1px solid var(--border);margin-bottom:12px;}
+
+/* Tree */
+.tree-item{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;border:1px solid var(--border);margin-bottom:6px;background:var(--bg-input);transition:border-color 0.15s;}
+.tree-item:hover{border-color:var(--color-principal);}
+.tree-item .info{display:flex;align-items:center;gap:10px;}
+.tree-item .name{font-size:13px;font-weight:700;color:var(--text-main);}
+.tree-item .detail{font-size:11px;color:var(--text-muted);}
+.tree-item .actions{display:flex;gap:6px;}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;}
+.badge-ti{background:rgba(0,123,255,0.12);color:#0056b3;border:1px solid rgba(0,123,255,0.3);}
+.badge-jefe{background:rgba(255,193,7,0.15);color:#d39e00;border:1px solid rgba(255,193,7,0.4);}
+.badge-user{background:rgba(108,117,125,0.12);color:#6c757d;border:1px solid rgba(108,117,125,0.3);}
+.badge-on{background:rgba(40,167,69,0.12);color:#1e7e34;}
+.badge-off{background:rgba(220,53,69,0.1);color:#dc3545;}
+
+/* Grupo card */
+.grupo-card{background:var(--bg-card);border-radius:10px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden;}
+.grupo-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;transition:background 0.15s;}
+.grupo-header:hover{background:var(--bg-hover);}
+.grupo-body{display:none;padding:16px;border-top:1px solid var(--border);}
+.grupo-body.open{display:block;}
+
+/* Buttons */
+.btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);transition:all 0.15s;}
+.btn-primary{background:var(--color-principal);color:#fff;border-color:var(--color-principal);}
+.btn-primary:hover{opacity:0.85;}
+.btn-danger{background:rgba(220,53,69,0.1);color:#dc3545;border-color:rgba(220,53,69,0.3);}
+.btn-danger:hover{background:rgba(220,53,69,0.2);}
+.btn-sm{padding:4px 10px;font-size:10px;}
+.btn-ghost{background:transparent;color:var(--text-sub);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg-hover);}
+
+/* Switches */
+.sw-mini{position:relative;width:36px;height:20px;flex-shrink:0;display:inline-block;vertical-align:middle;}
+.sw-mini input{opacity:0;width:100%;height:100%;position:absolute;cursor:pointer;margin:0;z-index:2;}
+.sw-mini .track{width:36px;height:20px;border-radius:10px;position:absolute;top:0;left:0;transition:background 0.3s;pointer-events:none;background:#555;}
+.sw-mini .knob{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.sw-mini input:checked~.track{background:var(--color-principal);}
+.sw-mini input:checked~.knob{left:18px;}
+
+/* Search input */
+.search-box{display:flex;gap:8px;margin-bottom:12px;}
+.search-box input{flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;}
+.search-box input:focus{border-color:var(--color-principal);}
+.search-results{max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:var(--bg-card);display:none;}
+.search-results.show{display:block;}
+.search-result{padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.search-result:hover{background:var(--bg-hover);}
+.search-result:last-child{border-bottom:none;}
+
+/* Perm row */
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.perm-row:last-child{border-bottom:none;}
+.perm-label{font-size:12px;color:var(--text-main);}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:var(--bg-card);border-radius:12px;padding:24px;border:1px solid var(--border);min-width:400px;max-width:500px;}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:16px;color:var(--text-main);}
+.modal input[type="text"]{width:100%;padding:10px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;margin-bottom:12px;}
+.modal input[type="text"]:focus{border-color:var(--color-principal);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--border);}
+.tab{padding:12px 24px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;}
+.tab:hover{color:var(--text-main);}
+.tab.active{color:var(--color-principal);border-bottom-color:var(--color-principal);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* Table */
+.data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.data-table th{background:var(--bg-dark3);color:var(--text-sub);padding:10px 12px;text-align:left;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:10;}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-main);vertical-align:middle;}
+.data-table tr:hover td{background:var(--bg-hover);}
+.data-table .empty-row td{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;}
+
+/* Filters */
+.filters-bar{padding:12px 16px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border);background:var(--bg-hover);}
+.filters-bar input,.filters-bar select{padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;}
+.filters-bar input:focus,.filters-bar select:focus{border-color:var(--color-principal);}
+
+/* Notif cards */
+.notif-card{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:10px;background:var(--bg-input);border:1px solid var(--border);margin-bottom:10px;transition:border-color 0.15s;}
+.notif-card:hover{border-color:var(--color-principal);}
+.notif-icon{font-size:24px;margin-right:14px;}
+.notif-info{flex:1;}
+.notif-label{font-size:13px;font-weight:700;color:var(--text-main);}
+.notif-desc{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.notif-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;}
+
+/* Empty state */
+.empty{text-align:center;padding:30px;color:var(--text-muted);font-size:13px;}
+</style>
+<%- include('partials/branding') %>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:32px;object-fit:contain;"></a>
+    <div class="sub">Permisos y Notificaciones</div>
+  </div>
+  <a href="/" class="btn-back">&larr; Menu</a>
+  <div class="user">
+    <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <a href="/logout" style="padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;">Salir</a>
+  </div>
+</div>
+<div class="container">
+  <% if (nivelInfo.nivel === 1) { %>
+    <span class="nivel-badge nivel-1">N1 - Superadmin</span>
+  <% } else if (nivelInfo.nivel === 2) { %>
+    <span class="nivel-badge nivel-2">N2 - TI</span>
+  <% } else { %>
+    <span class="nivel-badge nivel-3">N3 - Jefe de Area: <%= nivelInfo.grupo_nombre || '' %></span>
+  <% } %>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('arbol')">&#127795; Jerarquia</div>
+    <% if (nivelInfo.nivel <= 2) { %>
+    <div class="tab" onclick="switchTab('modulos')">&#128274; Permisos de Modulos</div>
+    <% } %>
+    <div class="tab" onclick="switchTab('notificaciones')">&#128276; Notificaciones</div>
+  </div>
+
+  <!-- Tab: Arbol -->
+  <div class="tab-content active" id="tab-arbol">
+    <div id="contenido"></div>
+  </div>
+
+  <% if (nivelInfo.nivel <= 2) { %>
+  <!-- Tab: Permisos de Modulos -->
+  <div class="tab-content" id="tab-modulos">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="filters-bar">
+        <input type="text" id="filtro-usuarios" placeholder="Buscar por nombre, usuario o grupo..." oninput="filtrarTablaUsuarios()" style="flex:1;">
+        <select id="filtro-nivel" onchange="filtrarTablaUsuarios()" style="width:120px;">
+          <option value="">Todos</option><option value="2">N2 - TI</option><option value="3">N3 - Jefe</option><option value="4">N4 - Usuario</option>
+        </select>
+        <span id="contador-usuarios" style="font-size:11px;color:var(--text-muted);white-space:nowrap;"></span>
+      </div>
+      <div style="max-height:550px;overflow-y:auto;">
+        <table class="data-table" id="tabla-usuarios-perm">
+          <thead>
+            <tr>
+              <th style="min-width:130px;">Usuario</th>
+              <th style="min-width:150px;">Nombre</th>
+              <th style="width:60px;text-align:center;">Nivel</th>
+              <th style="min-width:100px;">Grupo</th>
+              <th style="text-align:center;width:70px;">&#x1F3F7;&#xFE0F; Etiquetas</th>
+              <th style="text-align:center;width:55px;">&#x1F4CB; Actas</th>
+              <th style="text-align:center;width:65px;">&#x1F4CA; Reportes</th>
+              <th style="text-align:center;width:70px;">&#x1F4B0; Inversiones</th>
+              <th style="text-align:center;width:65px;">&#128274; Permisos</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-usuarios-perm">
+            <tr class="empty-row"><td colspan="9">Cargando usuarios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Tab: Notificaciones -->
+  <div class="tab-content" id="tab-notificaciones">
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Define como se notifica a los usuarios sobre actas pendientes.</p>
+    <div class="notif-card">
+      <div style="display:flex;align-items:center;">
+        <span class="notif-icon">&#128227;</span>
+        <div class="notif-info"><div class="notif-label">Notificacion en Dashboard</div><div class="notif-desc">Muestra alerta de actas pendientes al iniciar sesion</div></div>
+      </div>
+      <span class="notif-status" style="background:rgba(40,167,69,0.12);color:#1e7e34;">Activo</span>
+    </div>
+    <div class="notif-card">
+      <div style="display:flex;align-items:center;">
+        <span class="notif-icon">&#128276;</span>
+        <div class="notif-info"><div class="notif-label">Recordatorio manual</div><div class="notif-desc">Permite a TI enviar recordatorios a usuarios con actas pendientes</div></div>
+      </div>
+      <span class="notif-status" style="background:rgba(40,167,69,0.12);color:#1e7e34;">Activo</span>
+    </div>
+    <div class="notif-card" style="opacity:0.5;">
+      <div style="display:flex;align-items:center;">
+        <span class="notif-icon">&#128231;</span>
+        <div class="notif-info"><div class="notif-label">Notificacion por correo</div><div class="notif-desc">Envia email cuando hay actas pendientes de firma</div></div>
+      </div>
+      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Proximamente</span>
+    </div>
+    <div class="notif-card" style="opacity:0.5;">
+      <div style="display:flex;align-items:center;">
+        <span class="notif-icon">&#9200;</span>
+        <div class="notif-info"><div class="notif-label">Recordatorio automatico</div><div class="notif-desc">Notifica automaticamente despues de X dias sin firmar</div></div>
+      </div>
+      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Proximamente</span>
+    </div>
+  </div>
+</div>
+
+<!-- Modal crear grupo -->
+<div class="modal-overlay" id="modal-grupo">
+  <div class="modal">
+    <h3 id="modal-grupo-titulo">Crear Grupo</h3>
+    <input type="text" id="input-grupo-nombre" placeholder="Nombre del grupo (ej: Planta Duracolor)">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-grupo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarGrupo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal buscar usuario -->
+<div class="modal-overlay" id="modal-buscar">
+  <div class="modal">
+    <h3 id="modal-buscar-titulo">Buscar Usuario</h3>
+    <input type="text" id="input-buscar-user" placeholder="Escribe nombre o usuario..." oninput="buscarUsuarios()">
+    <div class="search-results" id="resultados-buscar"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-buscar')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal privilegios TI -->
+<div class="modal-overlay" id="modal-ti-privs">
+  <div class="modal">
+    <h3 id="ti-privs-titulo">Privilegios de TI</h3>
+    <div style="font-size:13px;color:var(--text-main);margin-bottom:16px;">Configurar acceso para <strong id="ti-privs-nombre"></strong></div>
+    <div class="perm-row" style="padding:10px 0;">
+      <span class="perm-label">Acceso al panel de administracion</span>
+      <div class="sw-mini"><input type="checkbox" id="ti-priv-admin"><div class="track"></div><div class="knob"></div></div>
+    </div>
+    <div class="perm-row" style="padding:10px 0;">
+      <span class="perm-label">Puede delegar permisos</span>
+      <div class="sw-mini"><input type="checkbox" id="ti-priv-delegar"><div class="track"></div><div class="knob"></div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-ti-privs')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-ti-confirmar" onclick="confirmarTI()">Agregar a TI</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmacion -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="min-width:350px;">
+    <h3 id="confirm-titulo">Confirmar</h3>
+    <div id="confirm-mensaje" style="font-size:13px;color:var(--text-main);margin-bottom:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-ok" onclick="">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const NIVEL = <%= nivelInfo.nivel %>;
+const GRUPO_ID = '<%= nivelInfo.grupo_id || "" %>';
+const TI_NOMBRE_AREA = '<%= (permisosConfig.ti_nombre_area || "").replace(/'/g, "\\'") %>';
+let arbol = { ti_usuarios: {}, grupos: {} };
+let buscarTimeout = null;
+let buscarContexto = { tipo: '', grupo_id: '' };
+let gruposAbiertos = new Set();
+
+async function cargarArbol() {
+  try {
+    const res = await fetch('/permisos/api/arbol');
+    arbol = await res.json();
+  } catch(e) { arbol = { ti_usuarios: {}, grupos: {} }; }
+  renderArbol();
+}
+
+function renderArbol() {
+  const el = document.getElementById('contenido');
+  let html = '';
+
+  // Seccion TI (solo N1)
+  if (NIVEL === 1) {
+    html += '<div class="section">';
+    html += '<div class="section-title"><span style="font-size:16px;">&#128187;</span> Grupo TI (Nivel 2)</div>';
+
+    // Campo nombre del area
+    html += '<div class="card" style="margin-bottom:12px;">';
+    html += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Nombre del Area</div>';
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
+    html += '<input type="text" id="input-nombre-area" value="' + (TI_NOMBRE_AREA || '').replace(/"/g,'&quot;') + '" placeholder="Ej: Departamento de Sistemas" style="flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">';
+    html += '<button class="btn btn-primary btn-sm" onclick="guardarNombreArea()">Guardar</button>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Se usa como "Autorizado por" en las actas de salida.</div>';
+    html += '</div>';
+
+    const tiUsers = arbol.ti_usuarios || {};
+    if (Object.keys(tiUsers).length === 0) {
+      html += '<div class="card"><div class="empty">No hay usuarios TI configurados. Agrega miembros de tu equipo de sistemas.</div></div>';
+    } else {
+      for (const [user, info] of Object.entries(tiUsers)) {
+        html += '<div class="tree-item">';
+        html += '<div class="info">';
+        html += '<span style="font-size:16px;">&#128100;</span>';
+        html += '<div><div class="name">' + (info.nombre || user) + '</div><div class="detail">' + user + '</div></div>';
+        html += '</div>';
+        html += '<div style="display:flex;align-items:center;gap:10px;">';
+        html += '<span class="badge badge-ti">TI</span>';
+        if (info.admin_panel) html += '<span class="badge badge-on">Panel Admin</span>';
+        if (info.puede_delegar) html += '<span class="badge badge-on">Delega</span>';
+        html += '<button class="btn btn-ghost btn-sm" onclick="editarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\',' + !!info.admin_panel + ',' + !!info.puede_delegar + ')">Editar</button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="eliminarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\')">Quitar</button>';
+        html += '</div></div>';
+      }
+    }
+    html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="abrirBuscar(\'ti\')">+ Agregar usuario TI</button>';
+    html += '</div>';
+  }
+
+  // Seccion Grupos
+  html += '<div class="section">';
+  html += '<div class="section-title"><span style="font-size:16px;">&#128101;</span> Grupos y Areas (Nivel 3 y 4)</div>';
+
+  const grupos = arbol.grupos || {};
+  if (Object.keys(grupos).length === 0) {
+    if (NIVEL <= 2) {
+      html += '<div class="card"><div class="empty">No hay grupos creados. Crea un grupo para organizar usuarios por area.</div></div>';
+    } else {
+      html += '<div class="card"><div class="empty">No tienes un grupo asignado.</div></div>';
+    }
+  } else {
+    for (const [gid, grupo] of Object.entries(grupos)) {
+      html += renderGrupo(gid, grupo);
+    }
+  }
+
+  if (NIVEL <= 2) {
+    html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="abrirModalGrupo()">+ Crear Grupo</button>';
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+  // Restaurar grupos abiertos
+  gruposAbiertos.forEach(gid => {
+    const body = document.getElementById('gbody-' + gid);
+    if (body) body.classList.add('open');
+  });
+}
+
+function renderGrupo(gid, grupo) {
+  const miembros = (grupo.miembros || []);
+  let h = '<div class="grupo-card" id="grupo-' + gid + '">';
+
+  // Header
+  h += '<div class="grupo-header" onclick="toggleGrupo(\'' + gid + '\')">';
+  h += '<div style="display:flex;align-items:center;gap:10px;">';
+  h += '<span style="font-size:20px;">&#128101;</span>';
+  h += '<div>';
+  h += '<span style="font-size:14px;font-weight:700;color:var(--text-main);">' + (grupo.nombre || 'Sin nombre') + '</span>';
+  h += '<span style="margin-left:8px;font-size:11px;color:var(--text-muted);">' + miembros.length + ' miembro' + (miembros.length !== 1 ? 's' : '') + '</span>';
+  h += '</div></div>';
+  h += '<div style="display:flex;align-items:center;gap:8px;">';
+  const jefes = grupo.jefes || [];
+  // Compatibilidad formato viejo
+  if (!jefes.length && grupo.jefe) jefes.push({ username: grupo.jefe, nombre: grupo.jefe_nombre || grupo.jefe });
+  if (jefes.length) {
+    h += '<span class="badge badge-jefe">' + jefes.length + ' jefe' + (jefes.length > 1 ? 's' : '') + '</span>';
+  } else {
+    h += '<span class="badge badge-off">Sin jefe</span>';
+  }
+  if (NIVEL <= 2) {
+    h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editarNombreGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Editar nombre">&#9998;</button>';
+    h += '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Eliminar grupo">&#128465;</button>';
+  }
+  h += '<span style="font-size:14px;color:var(--text-muted);transition:transform 0.2s;" id="arrow-' + gid + '">&#9660;</span>';
+  h += '</div></div>';
+
+  // Body
+  h += '<div class="grupo-body" id="gbody-' + gid + '">';
+
+  // Permisos del grupo
+  h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-input);border:1px solid var(--border);">';
+  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:10px;">Permisos del grupo</div>';
+  const gp = grupo.permisos || {};
+  h += '<div class="perm-row"><span class="perm-label">&#x1F4CB; Actas</span>';
+  h += '<div class="sw-mini"><input type="checkbox" ' + (gp.actas ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'actas\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+  h += '<div class="perm-row"><span class="perm-label">&#x1F4CA; Reportes</span>';
+  h += '<div class="sw-mini"><input type="checkbox" ' + (gp.reportes ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'reportes\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+  if (NIVEL <= 2) {
+    h += '<div class="perm-row"><span class="perm-label">&#x1F4DD; Crear acta de entrega <span style="font-size:10px;color:var(--text-muted);">(solo jefe N3)</span></span>';
+    h += '<div class="sw-mini"><input type="checkbox" ' + (gp.crear_entrega ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'crear_entrega\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+  }
+  h += '</div>';
+
+  // Jefes (multiples)
+  h += '<div style="margin-bottom:12px;">';
+  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Jefes de Area (N3)</div>';
+  if (jefes.length === 0) {
+    h += '<div style="padding:8px;text-align:center;color:var(--text-muted);font-size:12px;">Sin jefes asignados</div>';
+  } else {
+    for (const j of jefes) {
+      h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#129489;&#8205;&#128188;</span>';
+      h += '<div><div class="name">' + (j.nombre || j.username) + '</div><div class="detail">' + j.username + '</div></div>';
+      h += '</div><div style="display:flex;align-items:center;gap:6px;"><span class="badge badge-jefe">N3</span>';
+      h += '<button class="btn btn-danger btn-sm" onclick="quitarJefe(\'' + gid + '\',\'' + j.username + '\',\'' + (j.nombre || j.username).replace(/'/g, "\\'") + '\')">Quitar</button>';
+      h += '</div></div>';
+    }
+  }
+  h += '<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="abrirBuscar(\'jefe\',\'' + gid + '\')">+ Agregar jefe</button>';
+  h += '</div>';
+
+  // Miembros
+  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Usuarios (N4)</div>';
+  if (miembros.length === 0) {
+    h += '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">Sin miembros</div>';
+  } else {
+    for (const m of miembros) {
+      const mUser = typeof m === 'string' ? m : m.username;
+      const mNombre = typeof m === 'string' ? m : (m.nombre || m.username);
+      h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#128100;</span>';
+      h += '<div><div class="name">' + mNombre + '</div><div class="detail">' + mUser + '</div></div>';
+      h += '</div>';
+      h += '<div style="display:flex;align-items:center;gap:6px;">';
+      h += '<span class="badge badge-user">N4</span>';
+      h += '<button class="btn btn-danger btn-sm" onclick="quitarMiembro(\'' + gid + '\',\'' + mUser + '\',\'' + mNombre.replace(/'/g, "\\'") + '\')">Quitar</button>';
+      h += '</div></div>';
+    }
+  }
+  h += '<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="abrirBuscar(\'miembro\',\'' + gid + '\')">+ Agregar usuario</button>';
+
+
+  h += '</div></div>';
+  return h;
+}
+
+function toggleGrupo(gid) {
+  const body = document.getElementById('gbody-' + gid);
+  body.classList.toggle('open');
+  if (body.classList.contains('open')) gruposAbiertos.add(gid);
+  else gruposAbiertos.delete(gid);
+}
+
+// Modales
+function abrirModalGrupo() {
+  document.getElementById('input-grupo-nombre').value = '';
+  document.getElementById('modal-grupo').classList.add('show');
+  setTimeout(() => document.getElementById('input-grupo-nombre').focus(), 100);
+}
+
+function cerrarModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+async function guardarGrupo() {
+  const nombre = document.getElementById('input-grupo-nombre').value.trim();
+  if (!nombre) return;
+  await fetch('/permisos/api/grupo/crear', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre }),
+  });
+  cerrarModal('modal-grupo');
+  toast('Grupo creado');
+  cargarArbol();
+}
+
+function eliminarGrupo(gid, nombre) {
+  confirmar('Eliminar grupo', 'Eliminar "' + nombre + '"? Los miembros perderan sus permisos.', async function() {
+    await fetch('/permisos/api/grupo/eliminar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: gid }),
+    });
+    toast('Grupo eliminado');
+    cargarArbol();
+  });
+}
+
+// Buscar usuarios
+function abrirBuscar(tipo, grupoId) {
+  buscarContexto = { tipo, grupo_id: grupoId || '' };
+  const titulos = { ti: 'Agregar Usuario TI', jefe: 'Asignar Jefe de Area', miembro: 'Agregar Usuario al Grupo' };
+  document.getElementById('modal-buscar-titulo').textContent = titulos[tipo] || 'Buscar Usuario';
+  document.getElementById('input-buscar-user').value = '';
+  document.getElementById('resultados-buscar').innerHTML = '';
+  document.getElementById('resultados-buscar').classList.remove('show');
+  document.getElementById('modal-buscar').classList.add('show');
+  setTimeout(() => document.getElementById('input-buscar-user').focus(), 100);
+}
+
+function buscarUsuarios() {
+  clearTimeout(buscarTimeout);
+  const q = document.getElementById('input-buscar-user').value.trim();
+  const rDiv = document.getElementById('resultados-buscar');
+  if (q.length < 2) { rDiv.classList.remove('show'); return; }
+
+  buscarTimeout = setTimeout(async () => {
+    try {
+      const res = await fetch('/permisos/api/buscar-usuarios?q=' + encodeURIComponent(q));
+      const users = await res.json();
+      if (!users.length) {
+        rDiv.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">Sin resultados</div>';
+      } else {
+        rDiv.innerHTML = users.map(u => {
+          if (u.asignado) {
+            return '<div class="search-result" style="opacity:0.45;cursor:not-allowed;">' +
+              '<div><strong>' + u.nombre + '</strong> <span style="color:var(--text-muted);font-size:11px;">(' + u.username + ')</span></div>' +
+              '<span class="badge badge-off" style="white-space:nowrap;">' + u.asignado + '</span>' +
+              '</div>';
+          }
+          return '<div class="search-result" onclick="seleccionarUsuario(\'' + u.username.replace(/'/g, "\\'") + '\',\'' + (u.nombre || '').replace(/'/g, "\\'") + '\')">' +
+            '<div><strong>' + u.nombre + '</strong> <span style="color:var(--text-muted);font-size:11px;">(' + u.username + ')</span></div>' +
+            '<span class="badge badge-' + (u.tipo === 'AD' ? 'ti' : u.tipo === 'GLPI' ? 'on' : 'user') + '">' + u.tipo + '</span>' +
+            '</div>';
+        }).join('');
+      }
+      rDiv.classList.add('show');
+    } catch(e) { rDiv.classList.remove('show'); }
+  }, 300);
+}
+
+let pendienteTI = { username: '', nombre: '', editando: false };
+
+// Confirmacion custom en vez de confirm()
+function confirmar(titulo, mensaje, callback) {
+  document.getElementById('confirm-titulo').textContent = titulo;
+  document.getElementById('confirm-mensaje').textContent = mensaje;
+  document.getElementById('btn-confirm-ok').onclick = function() {
+    cerrarModal('modal-confirm');
+    callback();
+  };
+  document.getElementById('modal-confirm').classList.add('show');
+}
+
+async function seleccionarUsuario(username, nombre) {
+  const ctx = buscarContexto;
+  if (ctx.tipo === 'ti') {
+    // Abrir modal de privilegios en vez de confirm()
+    pendienteTI = { username, nombre, editando: false };
+    document.getElementById('ti-privs-titulo').textContent = 'Privilegios de TI';
+    document.getElementById('ti-privs-nombre').textContent = nombre || username;
+    document.getElementById('ti-priv-admin').checked = false;
+    document.getElementById('ti-priv-delegar').checked = false;
+    document.getElementById('btn-ti-confirmar').textContent = 'Agregar a TI';
+    cerrarModal('modal-buscar');
+    document.getElementById('modal-ti-privs').classList.add('show');
+    return;
+  } else if (ctx.tipo === 'jefe') {
+    await fetch('/permisos/api/grupo/agregar-jefe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: ctx.grupo_id, username, nombre }),
+    });
+  } else if (ctx.tipo === 'miembro') {
+    await fetch('/permisos/api/grupo/miembro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: ctx.grupo_id, username, nombre }),
+    });
+  }
+  cerrarModal('modal-buscar');
+  toast('Usuario asignado');
+  cargarArbol();
+}
+
+function editarTI(username, nombre, adminPanel, puedeDelegar) {
+  pendienteTI = { username, nombre, editando: true };
+  document.getElementById('ti-privs-titulo').textContent = 'Editar Privilegios';
+  document.getElementById('ti-privs-nombre').textContent = nombre || username;
+  document.getElementById('ti-priv-admin').checked = adminPanel;
+  document.getElementById('ti-priv-delegar').checked = puedeDelegar;
+  document.getElementById('btn-ti-confirmar').textContent = 'Guardar cambios';
+  document.getElementById('modal-ti-privs').classList.add('show');
+}
+
+async function confirmarTI() {
+  const adminPanel = document.getElementById('ti-priv-admin').checked;
+  const puedeDelegar = document.getElementById('ti-priv-delegar').checked;
+  await fetch('/permisos/api/ti/guardar', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: pendienteTI.username, nombre: pendienteTI.nombre, admin_panel: adminPanel, puede_delegar: puedeDelegar }),
+  });
+  cerrarModal('modal-ti-privs');
+  toast(pendienteTI.editando ? 'Privilegios actualizados' : 'Usuario agregado a TI');
+  cargarArbol();
+}
+
+async function guardarNombreArea() {
+  const nombre = document.getElementById('input-nombre-area').value.trim();
+  const res = await fetch('/permisos/api/ti/nombre-area', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nombre_area: nombre }),
+  });
+  const data = await res.json();
+  if (data.ok) toast('Nombre del area guardado');
+}
+
+function eliminarTI(username, nombre) {
+  confirmar('Quitar de TI', 'Quitar a ' + (nombre || username) + ' del grupo TI?', async function() {
+    await fetch('/permisos/api/ti/eliminar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+    toast((nombre || username) + ' removido de TI');
+    cargarArbol();
+  });
+}
+
+function quitarJefe(gid, username, nombre) {
+  confirmar('Quitar jefe', 'Quitar a ' + (nombre || username) + ' como jefe del grupo?', async function() {
+    await fetch('/permisos/api/grupo/quitar-jefe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: gid, username }),
+    });
+    toast((nombre || username) + ' removido como jefe');
+    cargarArbol();
+  });
+}
+
+function editarNombreGrupo(gid, nombreActual) {
+  document.getElementById('input-grupo-nombre').value = nombreActual;
+  document.getElementById('modal-grupo-titulo').textContent = 'Editar Grupo';
+  document.getElementById('modal-grupo').classList.add('show');
+  // Cambiar temporalmente el onclick del boton guardar
+  const btnGuardar = document.querySelector('#modal-grupo .btn-primary');
+  btnGuardar.onclick = async function() {
+    const nombre = document.getElementById('input-grupo-nombre').value.trim();
+    if (!nombre) return;
+    await fetch('/permisos/api/grupo/editar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: gid, nombre }),
+    });
+    cerrarModal('modal-grupo');
+    toast('Grupo actualizado');
+    // Restaurar onclick original
+    btnGuardar.onclick = function() { guardarGrupo(); };
+    document.getElementById('modal-grupo-titulo').textContent = 'Crear Grupo';
+    cargarArbol();
+  };
+  setTimeout(() => document.getElementById('input-grupo-nombre').focus(), 100);
+}
+
+function quitarMiembro(gid, username, nombre) {
+  confirmar('Quitar miembro', 'Quitar a ' + (nombre || username) + ' del grupo?', async function() {
+    await fetch('/permisos/api/grupo/quitar-miembro', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id: gid, username }),
+    });
+    toast((nombre || username) + ' removido del grupo');
+    cargarArbol();
+  });
+}
+
+async function cambiarPermGrupo(gid, perm, valor) {
+  const permisos = {};
+  permisos[perm] = valor;
+  await fetch('/permisos/api/grupo/permisos', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grupo_id: gid, permisos }),
+  });
+  toast('Permiso actualizado');
+}
+
+// Tabs
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  // Activar tab correcto
+  const tabs = document.querySelectorAll('.tab');
+  const nombres = { arbol: 'Jerarquia', modulos: 'Modulos', notificaciones: 'Notificaciones' };
+  tabs.forEach(t => { if (t.textContent.includes(nombres[tab] || '')) t.classList.add('active'); });
+  // Cargar tabla de modulos al entrar
+  if (tab === 'modulos' && !todosUsuarios.length) cargarTablaUsuarios();
+}
+
+// Tabla de permisos de modulos
+let todosUsuarios = [];
+
+async function cargarTablaUsuarios() {
+  const tbody = document.getElementById('tbody-usuarios-perm');
+  if (!tbody) return;
+  try {
+    todosUsuarios = await fetch('/permisos/api/todos-usuarios').then(r => r.json());
+    renderTablaUsuarios(todosUsuarios);
+  } catch(e) { tbody.innerHTML = '<tr class="empty-row"><td colspan="9">Error al cargar usuarios</td></tr>'; }
+}
+
+function renderTablaUsuarios(users) {
+  const tbody = document.getElementById('tbody-usuarios-perm');
+  if (!tbody) return;
+  document.getElementById('contador-usuarios').textContent = users.length + ' usuario' + (users.length !== 1 ? 's' : '');
+  if (!users.length) { tbody.innerHTML = '<tr class="empty-row"><td colspan="9">No se encontraron usuarios.</td></tr>'; return; }
+
+  const nivelBadge = n => {
+    if (n === 2) return '<span class="badge badge-ti">N2</span>';
+    if (n === 3) return '<span class="badge badge-jefe">N3</span>';
+    return '<span class="badge badge-user">N4</span>';
+  };
+  const permIcon = v => v ? '<span style="color:#1e7e34;font-weight:700;">&#10003;</span>' : '<span style="color:#999;">&#10007;</span>';
+
+  tbody.innerHTML = users.map(u => {
+    const p = u.permisos || {};
+    return '<tr>' +
+      '<td><strong>' + u.username + '</strong></td>' +
+      '<td>' + u.nombre + '</td>' +
+      '<td style="text-align:center;">' + nivelBadge(u.nivel) + '</td>' +
+      '<td><small style="color:var(--text-muted);">' + u.grupo + '</small></td>' +
+      '<td style="text-align:center;">' + permIcon(p.etiquetas) + '</td>' +
+      '<td style="text-align:center;">' + permIcon(p.actas) + '</td>' +
+      '<td style="text-align:center;">' + permIcon(p.reportes) + '</td>' +
+      '<td style="text-align:center;">' + permIcon(p.inversiones) + '</td>' +
+      '<td style="text-align:center;">' + permIcon(p.permisos) + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+function filtrarTablaUsuarios() {
+  const q = (document.getElementById('filtro-usuarios').value || '').toLowerCase();
+  const nivel = document.getElementById('filtro-nivel').value;
+  let filtered = todosUsuarios;
+  if (q) filtered = filtered.filter(u => u.username.toLowerCase().includes(q) || u.nombre.toLowerCase().includes(q) || u.grupo.toLowerCase().includes(q));
+  if (nivel) filtered = filtered.filter(u => u.nivel === parseInt(nivel));
+  renderTablaUsuarios(filtered);
+}
+
+// Init
+cargarArbol();
+</script>
+</body>
+</html>

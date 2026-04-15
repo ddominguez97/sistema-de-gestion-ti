@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { loginGLPI, loginAD, resolveADConfig } = require('../middleware/auth');
+const { loginGLPI, loginAD, resolveADConfig, getNivelUsuario, getPermisosUsuario } = require('../middleware/auth');
 const { loadConfig } = require('../config/config');
 
 // GET / — Login o Dashboard
@@ -8,15 +8,14 @@ router.get('/', async (req, res) => {
   if (req.session.nagsa_user) {
     const cfg = res.locals.cfg;
     const modulos = cfg.modulos || {};
+    const nivelInfo = getNivelUsuario(cfg, req);
+    const permisosUser = getPermisosUsuario(cfg, req);
     // Determinar si ve el icono de admin
     let showAdmin = false;
-    if (req.session.nagsa_auth === 'glpi') showAdmin = true;
+    if (nivelInfo.nivel === 1) showAdmin = true;
     else if (req.session.admin_ok) showAdmin = true;
-    else {
-      const adminUsers = (cfg.admin_users || []).map(u => u.toLowerCase());
-      if (adminUsers.includes(req.session.nagsa_user.toLowerCase())) showAdmin = true;
-    }
-    return res.render('dashboard', { modulos, showAdmin });
+    else if (nivelInfo.nivel === 2 && nivelInfo.config && nivelInfo.config.admin_panel) showAdmin = true;
+    return res.render('dashboard', { modulos, showAdmin, nivelInfo, permisosUser });
   }
   res.render('login', { error: null });
 });

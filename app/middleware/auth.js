@@ -184,17 +184,22 @@ async function loginAD(username, password, adCfg) {
             client.destroy();
             return resolve({ user: username, name: displayName, firstname: firstName || username, auth: 'ad' });
           }
+          let realName = '', fullDisplayName = '';
           searchRes.on('searchEntry', (entry) => {
             const attrs = entry.pojo ? entry.pojo.attributes : [];
             for (const a of attrs) {
-              if (a.type === realnameField && a.values[0]) displayName = a.values[0];
-              else if (a.type === 'displayName' && a.values[0] && displayName === username) displayName = a.values[0];
+              if (a.type === realnameField && a.values[0]) realName = a.values[0];
+              if (a.type === 'displayName' && a.values[0]) fullDisplayName = a.values[0];
               if (a.type === firstnameField && a.values[0]) firstName = a.values[0];
               else if (a.type === 'givenName' && a.values[0] && !firstName) firstName = a.values[0];
             }
           });
           searchRes.on('end', () => {
             client.destroy();
+            // Prioridad: displayName completo > nombre+apellido > realname > username
+            if (fullDisplayName) displayName = fullDisplayName;
+            else if (firstName && realName) displayName = firstName + ' ' + realName;
+            else if (realName) displayName = realName;
             resolve({ user: username, name: displayName, firstname: firstName || displayName, auth: 'ad' });
           });
         });
@@ -214,8 +219,96 @@ function checkModulo(cfg, modulo, req) {
     if (req.session.admin_ok) return null;
     // Usuario autenticado via GLPI (superadmin/TI)
     if (req.session.nagsa_auth === 'glpi') return null;
+    // N2 (TI) o N3 con permiso explicito
+    const info = getNivelUsuario(cfg, req);
+    if (info.nivel <= 2) return null;
+    const perms = getPermisosUsuario(cfg, req);
+    if (perms[modulo]) return null;
   }
   return estado;
 }
 
-module.exports = { requireLogin, requireAdmin, loginGLPI, loginAD, checkModulo, getGLPILdapConfig, resolveADConfig };
+// Determinar nivel del usuario en el sistema de permisos
+// N1: Superadmin (auth GLPI) - ve todo
+// N2: TI (en ti_usuarios) - ve todo, admin panel si N1 lo permite
+// N3: Jefe de area (jefe de un grupo) - gestiona su grupo + es usuario
+// N4: Usuario normal - solo usa lo que le asignaron
+function getNivelUsuario(cfg, req) {
+  const user = (req.session.nagsa_user || '').toLowerCase();
+  const auth = req.session.nagsa_auth;
+  const pc = cfg.permisos_config || {};
+
+  // N1: Superadmin GLPI
+  if (auth === 'glpi') return { nivel: 1, rol: 'superadmin' };
+
+  // N2: Grupo TI
+  if (pc.ti_usuarios && pc.ti_usuarios[user]) {
+    return { nivel: 2, rol: 'ti', config: pc.ti_usuarios[user] };
+  }
+
+  // N3: Jefe de area (buscar si es jefe de algun grupo - soporta multiples jefes)
+  const grupos = pc.grupos || {};
+  for (const [gid, grupo] of Object.entries(grupos)) {
+    // Formato nuevo: array de jefes
+    const jefes = grupo.jefes || [];
+    if (jefes.some(j => (j.username || '').toLowerCase() === user)) {
+      return { nivel: 3, rol: 'jefe', grupo_id: gid, grupo_nombre: grupo.nombre };
+    }
+    // Formato viejo: jefe string (compatibilidad)
+    if ((grupo.jefe || '').toLowerCase() === user) {
+      return { nivel: 3, rol: 'jefe', grupo_id: gid, grupo_nombre: grupo.nombre };
+    }
+  }
+
+  // N4: Usuario normal
+  return { nivel: 4, rol: 'usuario' };
+}
+
+// Obtener permisos de modulos para un usuario
+function getPermisosUsuario(cfg, req) {
+  const info = getNivelUsuario(cfg, req);
+  const user = (req.session.nagsa_user || '').toLowerCase();
+  const pc = cfg.permisos_config || {};
+
+  // N1 y N2: ven todos los modulos
+  if (info.nivel <= 2) {
+    return { etiquetas: true, actas: true, reportes: true, inversiones: true, permisos: true };
+  }
+
+  // N3 y N4: buscar permisos asignados
+  // Primero buscar permisos individuales
+  const uPerms = (pc.usuarios_nivel && pc.usuarios_nivel[user]) || null;
+  if (uPerms && uPerms.modulos) {
+    return {
+      etiquetas: false, inversiones: false, // nunca para N3/N4
+      actas: !!uPerms.modulos.actas,
+      reportes: !!uPerms.modulos.reportes,
+      permisos: info.nivel === 3, // solo jefes ven permisos
+    };
+  }
+
+  // Buscar permisos por grupo
+  const grupos = pc.grupos || {};
+  for (const [gid, grupo] of Object.entries(grupos)) {
+    const miembros = (grupo.miembros || []).map(m => (typeof m === 'string' ? m : m.username).toLowerCase());
+    const jefes = (grupo.jefes || []).map(j => (j.username || '').toLowerCase());
+    const esJefe = jefes.includes(user) || (grupo.jefe || '').toLowerCase() === user;
+    if (esJefe || miembros.includes(user)) {
+      const gPerms = grupo.permisos || {};
+      return {
+        etiquetas: false, inversiones: false,
+        actas: !!gPerms.actas,
+        reportes: !!gPerms.reportes,
+        permisos: info.nivel === 3,
+      };
+    }
+  }
+
+  // Sin permisos asignados - por defecto ve actas (sus propias) y reportes (sus propios)
+  return {
+    etiquetas: false, inversiones: false, permisos: false,
+    actas: true, reportes: true,
+  };
+}
+
+module.exports = { requireLogin, requireAdmin, loginGLPI, loginAD, checkModulo, getGLPILdapConfig, resolveADConfig, getNivelUsuario, getPermisosUsuario };
