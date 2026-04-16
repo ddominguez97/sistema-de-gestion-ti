@@ -18,10 +18,10 @@
     "empresa_logo": "logo_empresa.png",
     "empresa_tema": "claro",
     "local_db": {
-        "server": "localhost\\SQLEXPRESS",
+        "server": "192.168.106.38\\SQLEXPRESS",
         "database": "SistemaNG",
-        "user": "",
-        "password": ""
+        "user": "sistemang_app",
+        "password": "SisNG2026$Prod"
     },
     "show": {
         "computadoras": true,

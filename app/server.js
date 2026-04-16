@@ -76,6 +76,15 @@ app.use('/actas', require('./routes/actas'));
 app.use('/reportes', require('./routes/reportes'));
 app.use('/permisos', require('./routes/permisos'));
 
-app.listen(PORT, () => {
-  console.log(`Sistema NG corriendo en http://localhost:${PORT}`);
+// Inicializar config desde SQL Server y arrancar
+const { initConfig } = require('./config/config');
+initConfig().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Sistema NG corriendo en http://localhost:${PORT}`);
+  });
+}).catch(e => {
+  console.warn('Iniciando sin SQL Server:', e.message);
+  app.listen(PORT, () => {
+    console.log(`Sistema NG corriendo en http://localhost:${PORT} (modo JSON)`);
+  });
 });
