@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { loadConfig, saveConfig, ROOT_PATH } = require('../config/config');
-const { getGLPILdapConfig } = require('../middleware/auth');
+const { getGLPILdapConfig, getNivelUsuario } = require('../middleware/auth');
 
 function getAdminPass() {
   const cfg = loadConfig();
@@ -28,8 +28,9 @@ const upload = multer({
 });
 
 // Verificar si el usuario tiene acceso al admin
-function tieneAccesoAdmin(session) {
+function tieneAccesoAdmin(req) {
   const cfg = loadConfig();
+  const session = req.session;
   const hayBD = !!(cfg.db_host);
 
   // Sin BD configurada: cualquiera puede entrar con contrasena (primera vez)
@@ -37,10 +38,14 @@ function tieneAccesoAdmin(session) {
 
   if (!session || !session.nagsa_user) return 'password'; // no logueado, pide contrasena
   if (session.admin_ok) return 'full'; // ya autenticado en admin
-  if (session.nagsa_auth === 'glpi') return 'full'; // super admin GLPI, directo
-  // Verificar si esta en la lista de admin_users
-  const adminUsers = (cfg.admin_users || []).map(u => u.toLowerCase());
-  if (adminUsers.includes(session.nagsa_user.toLowerCase())) return 'password';
+
+  // N1: Superadmin GLPI, directo
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel === 1) return 'full';
+
+  // N2: TI con admin_panel habilitado
+  if (nivelInfo.nivel === 2 && nivelInfo.config && nivelInfo.config.admin_panel) return 'password';
+
   return 'none'; // sin permiso
 }
 
@@ -66,7 +71,7 @@ router.get('/', async (req, res) => {
     });
   }
 
-  const acceso = tieneAccesoAdmin(req.session);
+  const acceso = tieneAccesoAdmin(req);
 
   // Sin permiso: redirigir al dashboard
   if (acceso === 'none') return res.redirect('/');
@@ -114,7 +119,7 @@ router.post('/setup', (req, res) => {
 
 // POST /admin — login
 router.post('/login', (req, res) => {
-  const acceso = tieneAccesoAdmin(req.session);
+  const acceso = tieneAccesoAdmin(req);
   if (acceso === 'none') return res.redirect('/');
   if (acceso === 'full') { req.session.admin_ok = true; return res.redirect('/admin'); }
   // Verificar contrasena
