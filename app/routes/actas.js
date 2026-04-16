@@ -344,6 +344,45 @@ router.get('/api/estadisticas', requireLogin, (req, res) => {
   });
 });
 
+// GET /actas/api/mis-pendientes — pendientes del usuario (N3 incluye su grupo)
+router.get('/api/mis-pendientes', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  const user = (req.session.nagsa_user || '').toLowerCase();
+  const data = loadData();
+
+  // Obtener lista de usernames a buscar
+  const usernames = new Set([user]);
+
+  // Si es N3 (jefe), agregar los miembros de su grupo
+  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id) {
+    const pc = cfg.permisos_config || {};
+    const grupo = (pc.grupos || {})[nivelInfo.grupo_id];
+    if (grupo) {
+      for (const m of (grupo.miembros || [])) {
+        const mUser = typeof m === 'string' ? m : m.username;
+        usernames.add(mUser.toLowerCase());
+      }
+    }
+  }
+
+  const pendientes = data.actas.filter(a => {
+    if (!['pendiente', 'pendiente_autorizacion'].includes(a.estado)) return false;
+    const recibe = (a.recibido_username || '').toLowerCase();
+    const retira = (a.retira_username || '').toLowerCase();
+    const creador = (a.created_by || '').toLowerCase();
+    return usernames.has(recibe) || usernames.has(retira) || usernames.has(creador);
+  });
+
+  pendientes.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  res.json(pendientes.map(a => ({
+    id: a.id, numero: a.numero, tipo: a.tipo, fecha: a.fecha,
+    recibido_por: a.recibido_por, retira_persona: a.retira_persona,
+    total_equipos: a.total_equipos, estado: a.estado,
+    created_by: a.created_by, created_at: a.created_at,
+  })));
+});
+
 // GET /actas/api/proveedores — proveedores de GLPI para destino
 router.get('/api/proveedores', requireLogin, async (req, res) => {
   let conn;
@@ -371,9 +410,7 @@ router.get('/api/mis-equipos', requireLogin, async (req, res) => {
       { tabla:'glpi_computers', tipo:'Computadora' },
       { tabla:'glpi_monitors', tipo:'Monitor' },
       { tabla:'glpi_printers', tipo:'Impresora' },
-      { tabla:'glpi_peripherals', tipo:'Periferico' },
       { tabla:'glpi_networkequipments', tipo:'Disp. de Red' },
-      { tabla:'glpi_phones', tipo:'Telefono' },
     ];
     for (const t of tipos) {
       const [rows] = await conn.execute(
@@ -391,6 +428,23 @@ router.get('/api/mis-equipos', requireLogin, async (req, res) => {
         });
       }
     }
+
+    // Consumibles asignados al usuario
+    const [consumibles] = await conn.execute(
+      `SELECT c.id, ci.name, ci.manufacturers_id
+       FROM glpi_consumables c
+       JOIN glpi_consumableitems ci ON ci.id = c.consumableitems_id
+       WHERE c.items_id = ? AND c.itemtype = 'User' AND c.date_out IS NOT NULL`,
+      [userId]
+    );
+    for (const r of consumibles) {
+      const fab = r.manufacturers_id ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[r.manufacturers_id]))[0][0]?.name || '') : '';
+      results.push({
+        id: r.id, nombre: r.name, serie: '---',
+        fabricante: fab, tipo: 'Consumible', estado: 'Asignado', tabla: 'glpi_consumables',
+      });
+    }
+
     res.json(results);
   } catch (e) { res.status(500).json({ error: e.message }); }
   finally { if (conn) await conn.end(); }
@@ -471,7 +525,7 @@ router.post('/api/autorizar-solicitud', requireLogin, (req, res) => {
   const nivelInfo = getNivelUsuario(cfg, req);
   if (nivelInfo.nivel > 2) return res.status(403).json({ error: 'Solo TI puede autorizar' });
 
-  const { id, accion, observaciones } = req.body;
+  const { id, accion, observaciones, destino } = req.body;
   if (!id || !['autorizada','rechazada'].includes(accion)) {
     return res.status(400).json({ error: 'Datos incompletos' });
   }
@@ -486,6 +540,7 @@ router.post('/api/autorizar-solicitud', requireLogin, (req, res) => {
       acta.estado = accion;
       acta.autorizado_por = nombreArea;
       acta.autorizado_cargo = req.session.nagsa_name || req.session.nagsa_user;
+      if (destino) acta.destino = destino;
       acta.aceptada_por = req.session.nagsa_name || req.session.nagsa_user;
       acta.aceptada_fecha = now;
       acta.aceptada_observaciones = observaciones || null;

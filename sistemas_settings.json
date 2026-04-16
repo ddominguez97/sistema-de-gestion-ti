@@ -126,6 +126,7 @@
             }
         },
         "usuarios_nivel": {},
-        "ti_nombre_area": "NAGSA IT"
+        "ti_nombre_area": "NAGSA IT",
+        "motivos_salida": ["Equipo dañado", "Teletrabajo", "Prestamo", "Cambio de ubicacion"]
     }
 }

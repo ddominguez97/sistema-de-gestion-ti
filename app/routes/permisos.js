@@ -438,4 +438,26 @@ router.post('/api/grupo/permisos', requireLogin, (req, res) => {
   res.json({ ok: true });
 });
 
+// GET /permisos/api/motivos - obtener motivos de salida
+router.get('/api/motivos', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const pc = cfg.permisos_config || {};
+  res.json(pc.motivos_salida || []);
+});
+
+// POST /permisos/api/motivos/guardar - guardar motivos de salida (N1/N2)
+router.post('/api/motivos/guardar', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel > 2) return res.status(403).json({ error: 'Solo TI' });
+
+  const { motivos } = req.body;
+  if (!Array.isArray(motivos)) return res.status(400).json({ error: 'Formato invalido' });
+
+  if (!cfg.permisos_config) cfg.permisos_config = {};
+  cfg.permisos_config.motivos_salida = motivos.filter(m => m && m.trim()).map(m => m.trim());
+  saveConfig(cfg);
+  res.json({ ok: true });
+});
+
 module.exports = router;

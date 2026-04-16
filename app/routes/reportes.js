@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { requireLogin, checkModulo } = require('../middleware/auth');
+const { requireLogin, checkModulo, getNivelUsuario } = require('../middleware/auth');
 
 // GET /reportes — vista
 router.get('/', (req, res) => {
@@ -16,9 +16,10 @@ router.get('/', (req, res) => {
   const cfg = res.locals.cfg;
   const blocked = checkModulo(cfg, 'reportes', req);
   if (blocked) return res.render('proximamente', { titulo: 'Reportes y Estadisticas' });
-  // Determinar si es admin (ve todo) o usuario normal (ve solo las suyas)
-  const esAdmin = req.session.nagsa_auth === 'glpi' || req.session.admin_ok;
-  res.render('reportes', { esAdmin });
+  // Determinar nivel y permisos
+  const nivelInfo = getNivelUsuario(cfg, req);
+  const esAdmin = nivelInfo.nivel <= 2;
+  res.render('reportes', { esAdmin, nivelInfo });
 });
 
 // Proximamente route

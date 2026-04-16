@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
-.topbar{background:var(--bg-topbar);border-bottom:2px solid var(--color-principal);padding:12px 24px;display:flex;align-items:center;gap:16px;}
+.topbar{background:var(--bg-card);border-bottom:2px solid var(--color-principal);padding:14px 28px;display:flex;align-items:center;gap:16px;}
 .topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
 .topbar .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-sub);}
 .topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
@@ -94,7 +94,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <% const nivel = (typeof nivelInfo !== 'undefined') ? nivelInfo.nivel : 1; const canEntrega = (typeof puedeCrearEntrega !== 'undefined') ? puedeCrearEntrega : true; %>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
-    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:32px;object-fit:contain;"></a>
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
     <div class="sub">Sistema de Actas</div>
   </div>
   <a href="/" class="btn-back">&larr; Menu</a>
@@ -122,14 +122,6 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
     <div class="form-grid" style="margin-top:20px;">
       <div class="form-group"><label>Motivo de salida</label><select id="sol-motivo"><option value="">-- Seleccionar --</option></select></div>
-      <div class="form-group">
-        <label>Destino</label>
-        <select id="sol-destino-select" onchange="var v=this.value;var inp=document.getElementById('sol-destino-input');if(v==='otro'){inp.style.display='block';inp.focus();}else{inp.style.display='none';inp.value='';}">
-          <option value="">-- Seleccionar proveedor --</option>
-          <option value="otro">Otro (escribir manualmente)</option>
-        </select>
-        <input type="text" id="sol-destino-input" placeholder="Escribir destino..." style="display:none;margin-top:6px;">
-      </div>
     </div>
     <div class="form-grid" style="margin-top:12px;">
       <div class="form-group full"><label>Observaciones</label><textarea id="sol-obs" placeholder="Motivo adicional, condiciones del equipo..."></textarea></div>
@@ -183,24 +175,10 @@ function toggleTodosEquipos(checked) {
 
 async function cargarMotivos() {
   try {
-    const res = await fetch('/actas/api/estados');
-    const estados = await res.json();
+    const res = await fetch('/permisos/api/motivos');
+    const motivos = await res.json();
     const sel = document.getElementById('sol-motivo');
-    estados.forEach(e => { const o = document.createElement('option'); o.value = e.name; o.textContent = e.name; sel.appendChild(o); });
-  } catch(e) {}
-}
-
-async function cargarProveedores() {
-  try {
-    const res = await fetch('/actas/api/proveedores');
-    const provs = await res.json();
-    const sel = document.getElementById('sol-destino-select');
-    provs.forEach(p => {
-      const o = document.createElement('option');
-      o.value = p.name;
-      o.textContent = p.name;
-      sel.insertBefore(o, sel.lastElementChild); // antes de "Otro"
-    });
+    motivos.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
   } catch(e) {}
 }
 
@@ -208,15 +186,11 @@ async function enviarSolicitud() {
   if (!equiposSeleccionados.size) { toast('Selecciona al menos un equipo', 'error'); return; }
   const motivo = document.getElementById('sol-motivo').value;
   if (!motivo) { toast('Selecciona un motivo de salida', 'error'); return; }
-  const selDestino = document.getElementById('sol-destino-select').value;
-  const destino = selDestino === 'otro' ? document.getElementById('sol-destino-input').value.trim() : selDestino;
-  if (!destino) { toast('Indica el destino', 'error'); return; }
-
   const equipos = Array.from(equiposSeleccionados).map(i => misEquipos[i]);
   const res = await fetch('/actas/api/solicitar-salida', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      equipos, motivo, destino,
+      equipos, motivo,
       cargo: document.getElementById('sol-cargo').value.trim(),
       observaciones: document.getElementById('sol-obs').value.trim(),
     }),
@@ -228,9 +202,6 @@ async function enviarSolicitud() {
     equiposSeleccionados.clear();
     document.querySelectorAll('#sol-equipos-list input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.getElementById('sol-motivo').value = '';
-    document.getElementById('sol-destino-select').value = '';
-    document.getElementById('sol-destino-input').style.display = 'none';
-    document.getElementById('sol-destino-input').value = '';
     document.getElementById('sol-obs').value = '';
   } else {
     toast(data.error || 'Error al enviar solicitud', 'error');
@@ -239,7 +210,6 @@ async function enviarSolicitud() {
 
 cargarMisEquipos();
 cargarMotivos();
-cargarProveedores();
 </script>
 <% } %>
 
