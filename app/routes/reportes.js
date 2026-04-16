@@ -3,16 +3,7 @@ const router = express.Router();
 const { requireLogin, checkModulo, getNivelUsuario } = require('../middleware/auth');
 
 // GET /reportes — vista
-router.get('/', (req, res) => {
-  // Dev mode: auto-session for localhost
-  const host = req.headers.host || '';
-  if (!req.session.nagsa_user && (host.startsWith('localhost') || host.startsWith('127.0.0.1'))) {
-    req.session.nagsa_user = 'dev_local';
-    req.session.nagsa_name = 'Desarrollo Local';
-    req.session.nagsa_firstname = 'Desarrollo';
-    req.session.admin_ok = true;
-  }
-  if (!req.session.nagsa_user) return res.redirect('/');
+router.get('/', requireLogin, (req, res) => {
   const cfg = res.locals.cfg;
   const blocked = checkModulo(cfg, 'reportes', req);
   if (blocked) return res.render('proximamente', { titulo: 'Reportes y Estadisticas' });
