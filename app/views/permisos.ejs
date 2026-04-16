@@ -304,24 +304,26 @@ function renderArbol() {
   const el = document.getElementById('contenido');
   let html = '';
 
-  // Seccion TI (solo N1)
-  if (NIVEL === 1) {
+  // Seccion TI (N1 y N2)
+  if (NIVEL <= 2) {
     html += '<div class="section">';
     html += '<div class="section-title"><span style="font-size:16px;">&#128187;</span> Grupo TI (Nivel 2)</div>';
 
-    // Campo nombre del area
-    html += '<div class="card" style="margin-bottom:12px;">';
-    html += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Nombre del Area</div>';
-    html += '<div style="display:flex;gap:8px;align-items:center;">';
-    html += '<input type="text" id="input-nombre-area" value="' + (TI_NOMBRE_AREA || '').replace(/"/g,'&quot;') + '" placeholder="Ej: Departamento de Sistemas" style="flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">';
-    html += '<button class="btn btn-primary btn-sm" onclick="guardarNombreArea()">Guardar</button>';
-    html += '</div>';
-    html += '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Se usa como "Autorizado por" en las actas de salida.</div>';
-    html += '</div>';
+    // Campo nombre del area (solo N1)
+    if (NIVEL === 1) {
+      html += '<div class="card" style="margin-bottom:12px;">';
+      html += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Nombre del Area</div>';
+      html += '<div style="display:flex;gap:8px;align-items:center;">';
+      html += '<input type="text" id="input-nombre-area" value="' + (TI_NOMBRE_AREA || '').replace(/"/g,'&quot;') + '" placeholder="Ej: Departamento de Sistemas" style="flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">';
+      html += '<button class="btn btn-primary btn-sm" onclick="guardarNombreArea()">Guardar</button>';
+      html += '</div>';
+      html += '<div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Se usa como "Autorizado por" en las actas de salida.</div>';
+      html += '</div>';
+    }
 
     const tiUsers = arbol.ti_usuarios || {};
     if (Object.keys(tiUsers).length === 0) {
-      html += '<div class="card"><div class="empty">No hay usuarios TI configurados. Agrega miembros de tu equipo de sistemas.</div></div>';
+      html += '<div class="card"><div class="empty">No hay usuarios TI configurados.</div></div>';
     } else {
       for (const [user, info] of Object.entries(tiUsers)) {
         html += '<div class="tree-item">';
@@ -333,8 +335,10 @@ function renderArbol() {
         html += '<span class="badge badge-ti">TI</span>';
         if (info.admin_panel) html += '<span class="badge badge-on">Panel Admin</span>';
         if (info.puede_delegar) html += '<span class="badge badge-on">Delega</span>';
-        html += '<button class="btn btn-ghost btn-sm" onclick="editarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\',' + !!info.admin_panel + ',' + !!info.puede_delegar + ')">Editar</button>';
-        html += '<button class="btn btn-danger btn-sm" onclick="eliminarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\')">Quitar</button>';
+        if (NIVEL === 1) {
+          html += '<button class="btn btn-ghost btn-sm" onclick="editarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\',' + !!info.admin_panel + ',' + !!info.puede_delegar + ')">Editar</button>';
+          html += '<button class="btn btn-danger btn-sm" onclick="eliminarTI(\'' + user + '\',\'' + (info.nombre || user).replace(/'/g, "\\'") + '\')">Quitar</button>';
+        }
         html += '</div></div>';
       }
     }

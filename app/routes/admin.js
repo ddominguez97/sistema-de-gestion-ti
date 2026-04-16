@@ -43,8 +43,8 @@ function tieneAccesoAdmin(req) {
   const nivelInfo = getNivelUsuario(cfg, req);
   if (nivelInfo.nivel === 1) return 'full';
 
-  // N2: TI con admin_panel habilitado
-  if (nivelInfo.nivel === 2 && nivelInfo.config && nivelInfo.config.admin_panel) return 'password';
+  // N2: TI con admin_panel habilitado, entra directo
+  if (nivelInfo.nivel === 2 && nivelInfo.config && nivelInfo.config.admin_panel) return 'full';
 
   return 'none'; // sin permiso
 }

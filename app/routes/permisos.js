@@ -190,11 +190,11 @@ router.post('/api/ti/nombre-area', requireLogin, (req, res) => {
   res.json({ ok: true });
 });
 
-// POST /permisos/api/ti/guardar - agregar/editar usuario TI (solo N1)
+// POST /permisos/api/ti/guardar - agregar/editar usuario TI (N1 completo, N2 solo agregar sin privilegios)
 router.post('/api/ti/guardar', requireLogin, (req, res) => {
   const cfg = loadConfig();
   const nivelInfo = getNivelUsuario(cfg, req);
-  if (nivelInfo.nivel !== 1) return res.status(403).json({ error: 'Solo superadmin' });
+  if (nivelInfo.nivel > 2) return res.status(403).json({ error: 'Solo TI' });
 
   const { username, nombre, admin_panel, puede_delegar } = req.body;
   if (!username) return res.status(400).json({ error: 'Usuario requerido' });
@@ -202,11 +202,24 @@ router.post('/api/ti/guardar', requireLogin, (req, res) => {
   if (!cfg.permisos_config) cfg.permisos_config = { ti_usuarios: {}, grupos: {}, usuarios_nivel: {} };
   if (!cfg.permisos_config.ti_usuarios) cfg.permisos_config.ti_usuarios = {};
 
-  cfg.permisos_config.ti_usuarios[username.toLowerCase()] = {
-    nombre: nombre || username,
-    admin_panel: !!admin_panel,
-    puede_delegar: !!puede_delegar,
-  };
+  const existing = cfg.permisos_config.ti_usuarios[username.toLowerCase()];
+
+  if (nivelInfo.nivel === 1) {
+    // N1: control total de privilegios
+    cfg.permisos_config.ti_usuarios[username.toLowerCase()] = {
+      nombre: nombre || username,
+      admin_panel: !!admin_panel,
+      puede_delegar: !!puede_delegar,
+    };
+  } else {
+    // N2: solo puede agregar sin privilegios (no editar existentes)
+    if (existing) return res.status(403).json({ error: 'Solo el superadmin puede editar privilegios' });
+    cfg.permisos_config.ti_usuarios[username.toLowerCase()] = {
+      nombre: nombre || username,
+      admin_panel: false,
+      puede_delegar: false,
+    };
+  }
   saveConfig(cfg);
   res.json({ ok: true });
 });
