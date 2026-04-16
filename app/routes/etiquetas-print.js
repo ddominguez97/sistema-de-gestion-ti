@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const net = require('net');
 const { loadConfig, getBranding } = require('../config/config');
-const { requireLogin } = require('../middleware/auth');
+const { requireLogin, getNivelUsuario } = require('../middleware/auth');
 
 function buildZPL(item, size, fields, empresaNombre, glpiUrl) {
   const esc = (s) => {
@@ -96,7 +96,11 @@ function buildZPL(item, size, fields, empresaNombre, glpiUrl) {
 }
 
 // POST /etiquetas/print — enviar ZPL a la impresora Zebra
-router.post('/', requireLogin, (req, res) => {
+router.post('/', requireLogin, (req, res, next) => {
+  const cfg = loadConfig();
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Sin acceso' });
+  next();
+}, (req, res) => {
   const cfg = loadConfig();
   const branding = getBranding(cfg);
   const empresaNombre = (branding.nombre || 'NAGSA').toUpperCase();

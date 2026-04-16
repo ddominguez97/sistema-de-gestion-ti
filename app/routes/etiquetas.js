@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { requireLogin, checkModulo } = require('../middleware/auth');
+const { requireLogin, checkModulo, getNivelUsuario } = require('../middleware/auth');
 const { loadConfig } = require('../config/config');
 
 // Helpers
@@ -35,7 +35,15 @@ function qrUrl(base, type, id) {
 }
 
 // GET /etiquetas — vista
-router.get('/', requireLogin, (req, res) => {
+// Middleware: solo N1/N2 pueden acceder a etiquetas
+function requireTI(req, res, next) {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel > 2) return res.redirect('/');
+  next();
+}
+
+router.get('/', requireLogin, requireTI, (req, res) => {
   const cfg = res.locals.cfg;
   const blocked = checkModulo(cfg, 'etiquetas', req);
   if (blocked) return res.render('proximamente', { titulo: 'Etiquetas de Activos' });
@@ -43,7 +51,7 @@ router.get('/', requireLogin, (req, res) => {
 });
 
 // GET /etiquetas/api — datos de activos
-router.get('/api', requireLogin, async (req, res) => {
+router.get('/api', requireLogin, requireTI, async (req, res) => {
   const cfg = loadConfig();
   const BASE = cfg.base_url || '';
   const ENT = parseInt(cfg.entity_id) || 0;
@@ -109,7 +117,7 @@ router.get('/api', requireLogin, async (req, res) => {
 });
 
 // GET /etiquetas/api/impresoras — buscar impresoras Zebra (para admin)
-router.get('/api/impresoras', async (req, res) => {
+router.get('/api/impresoras', requireLogin, requireTI, async (req, res) => {
   const q = (req.query.q || '').trim();
   if (q.length < 1) return res.json([]);
   let conn;
