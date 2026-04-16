@@ -178,7 +178,7 @@ async function cargarMotivos() {
     const res = await fetch('/permisos/api/motivos');
     const motivos = await res.json();
     const sel = document.getElementById('sol-motivo');
-    motivos.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; sel.appendChild(o); });
+    motivos.forEach(m => { const o = document.createElement('option'); o.value = m.nombre; o.dataset.tipo = m.tipo; o.textContent = m.nombre; sel.appendChild(o); });
   } catch(e) {}
 }
 

@@ -310,8 +310,8 @@ router.post('/api/grupo/permisos', requireLogin, async (req, res) => {
 
 // GET /permisos/api/motivos
 router.get('/api/motivos', requireLogin, async (req, res) => {
-  const { recordset } = await query('SELECT nombre FROM motivos_salida WHERE activo=1 ORDER BY orden');
-  res.json(recordset.map(r => r.nombre));
+  const { recordset } = await query('SELECT nombre, tipo FROM motivos_salida WHERE activo=1 ORDER BY orden');
+  res.json(recordset);
 });
 
 // POST /permisos/api/motivos/guardar
@@ -322,9 +322,11 @@ router.post('/api/motivos/guardar', requireLogin, async (req, res) => {
   if (!Array.isArray(motivos)) return res.status(400).json({ error: 'Formato invalido' });
   // Desactivar todos y reinsertar
   await query('DELETE FROM motivos_salida');
-  const clean = motivos.filter(m => m && m.trim()).map(m => m.trim());
+  const clean = motivos.filter(m => m && (m.nombre || m).toString().trim());
   for (let i = 0; i < clean.length; i++) {
-    await query('INSERT INTO motivos_salida (nombre,orden) VALUES (@nombre,@orden)', { nombre: clean[i], orden: i });
+    const item = typeof clean[i] === 'string' ? { nombre: clean[i], tipo: 'externo' } : clean[i];
+    await query('INSERT INTO motivos_salida (nombre,tipo,orden) VALUES (@nombre,@tipo,@orden)',
+      { nombre: item.nombre.trim(), tipo: item.tipo || 'externo', orden: i });
   }
   await refreshCache();
   res.json({ ok: true });

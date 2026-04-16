@@ -205,6 +205,10 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
       <div id="motivos-list"></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <input type="text" id="input-nuevo-motivo" placeholder="Nuevo motivo..." style="flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">
+        <select id="input-nuevo-tipo" style="padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;">
+          <option value="externo">Externo (proveedor)</option>
+          <option value="interno">Interno (usuario)</option>
+        </select>
         <button class="btn btn-primary btn-sm" onclick="agregarMotivo()">+ Agregar</button>
       </div>
     </div>
@@ -734,17 +738,21 @@ function renderMotivos() {
     el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">No hay motivos configurados.</div>';
     return;
   }
-  el.innerHTML = motivosData.map((m, i) =>
-    '<div class="tree-item" style="margin-bottom:4px;"><div class="info"><span style="font-size:14px;">&#128196;</span><span class="name">' + m + '</span></div>' +
-    '<button class="btn btn-danger btn-sm" onclick="quitarMotivo(' + i + ')">Quitar</button></div>'
-  ).join('');
+  el.innerHTML = motivosData.map((m, i) => {
+    const tipoBadge = m.tipo === 'interno'
+      ? '<span class="badge badge-on" style="margin-left:8px;">Interno</span>'
+      : '<span class="badge badge-ti" style="margin-left:8px;">Externo</span>';
+    return '<div class="tree-item" style="margin-bottom:4px;"><div class="info"><span style="font-size:14px;">&#128196;</span><span class="name">' + m.nombre + '</span>' + tipoBadge + '</div>' +
+    '<button class="btn btn-danger btn-sm" onclick="quitarMotivo(' + i + ')">Quitar</button></div>';
+  }).join('');
 }
 
 async function agregarMotivo() {
   const input = document.getElementById('input-nuevo-motivo');
+  const tipoSel = document.getElementById('input-nuevo-tipo');
   const valor = input.value.trim();
   if (!valor) return;
-  motivosData.push(valor);
+  motivosData.push({ nombre: valor, tipo: tipoSel.value });
   input.value = '';
   await guardarMotivos();
   renderMotivos();

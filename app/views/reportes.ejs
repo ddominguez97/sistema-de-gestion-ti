@@ -308,7 +308,7 @@ async function cargarSolicitudes(){
         <td style="text-align:center;font-weight:700;">${a.total_equipos}</td>
         <td>
           <button class="btn-sm btn-view" onclick="verDetalle(${a.id})" style="margin-right:4px;">&#128065; Ver</button>
-          <button class="btn-sm btn-accept" onclick="autorizarSolicitud(${a.id},'autorizada')">&#9989; Autorizar</button>
+          <button class="btn-sm btn-accept" onclick="autorizarSolicitud(${a.id},'autorizada','${(a.motivo||'').replace(/'/g,"\\'")}','${(a.retira_persona||'').replace(/'/g,"\\'")}')">&#9989; Autorizar</button>
           <button class="btn-sm" onclick="autorizarSolicitud(${a.id},'rechazada')" style="padding:5px 12px;border-radius:5px;border:1px solid rgba(220,53,69,0.3);background:rgba(220,53,69,0.1);color:#dc3545;font-size:11px;font-weight:700;cursor:pointer;margin-left:4px;">&#10060; Rechazar</button>
         </td>
       </tr>`;
@@ -316,16 +316,20 @@ async function cargarSolicitudes(){
   }catch(e){tbody.innerHTML='<tr class="empty-row"><td colspan="7">Error: '+e.message+'</td></tr>';}
 }
 
-let proveedoresData = [];
+let proveedoresData = [], motivosMap = {};
 async function cargarProveedoresReportes() {
   if (proveedoresData.length) return;
+  try { proveedoresData = await fetch('/actas/api/proveedores').then(r => r.json()); } catch(e) {}
+}
+async function cargarMotivosMap() {
+  if (Object.keys(motivosMap).length) return;
   try {
-    const res = await fetch('/actas/api/proveedores');
-    proveedoresData = await res.json();
+    const motivos = await fetch('/permisos/api/motivos').then(r => r.json());
+    motivos.forEach(m => { motivosMap[m.nombre] = m.tipo; });
   } catch(e) {}
 }
 
-async function autorizarSolicitud(id, accion){
+async function autorizarSolicitud(id, accion, motivo, solicitante){
   if(accion==='rechazada'){
     rptRechazo(async function(obs){
       const res=await fetch('/actas/api/autorizar-solicitud',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,accion,observaciones:obs})});
@@ -334,7 +338,24 @@ async function autorizarSolicitud(id, accion){
     });
     return;
   }
-  // Autorizar: pedir destino/proveedor
+  // Determinar tipo de motivo
+  await cargarMotivosMap();
+  const tipoMotivo = motivosMap[motivo] || 'externo';
+
+  if (tipoMotivo === 'interno') {
+    // Motivo interno: destino es el solicitante, no pedir proveedor
+    rptConfirm('Autorizar solicitud', 'Autorizar solicitud de ' + (solicitante || 'usuario') + '? (Motivo: ' + (motivo || '---') + ')', async function() {
+      const res = await fetch('/actas/api/autorizar-solicitud', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, accion: 'autorizada', destino: solicitante || 'Usuario', observaciones: '' }),
+      });
+      const data = await res.json();
+      if (data.ok) { toast('Solicitud autorizada'); cargarSolicitudes(); } else toast(data.error || 'Error', 'error');
+    });
+    return;
+  }
+
+  // Motivo externo: pedir destino/proveedor
   await cargarProveedoresReportes();
   const sel = document.getElementById('rpt-autorizar-destino');
   sel.innerHTML = '<option value="">-- Seleccionar proveedor --</option>';
