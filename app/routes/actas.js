@@ -3,7 +3,7 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const fs = require('fs');
 const path = require('path');
-const { requireLogin, checkModulo } = require('../middleware/auth');
+const { requireLogin, checkModulo, getNivelUsuario, getPermisosUsuario } = require('../middleware/auth');
 const { loadConfig, DATA_DIR } = require('../config/config');
 
 const DATA_FILE = path.join(DATA_DIR, 'actas.json');
@@ -27,12 +27,20 @@ async function getConn() {
   });
 }
 
-// GET /actas — vista
+// GET /actas — vista (diferente segun nivel)
 router.get('/', requireLogin, (req, res) => {
   const cfg = res.locals.cfg;
   const blocked = checkModulo(cfg, 'actas', req);
   if (blocked) return res.render('proximamente', { titulo: 'Actas de Equipos' });
-  res.render('actas');
+  const nivelInfo = getNivelUsuario(cfg, req);
+  const pc = cfg.permisos_config || {};
+  // Verificar si N3 tiene permiso crear_entrega
+  let puedeCrearEntrega = nivelInfo.nivel <= 2;
+  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id) {
+    const grupo = (pc.grupos || {})[nivelInfo.grupo_id];
+    if (grupo && grupo.permisos && grupo.permisos.crear_entrega) puedeCrearEntrega = true;
+  }
+  res.render('actas', { nivelInfo, puedeCrearEntrega });
 });
 
 // GET /actas/api/buscar — buscar equipo en GLPI
@@ -334,6 +342,159 @@ router.get('/api/estadisticas', requireLogin, (req, res) => {
     general: { total:actas.length, equipos:totalEquipos },
     top_usuarios: topUsuarios,
   });
+});
+
+// GET /actas/api/proveedores — proveedores de GLPI para destino
+router.get('/api/proveedores', requireLogin, async (req, res) => {
+  let conn;
+  try {
+    conn = await getConn();
+    const [rows] = await conn.execute('SELECT id, name FROM glpi_suppliers WHERE is_deleted=0 ORDER BY name');
+    res.json(rows);
+  } catch (e) { res.json([]); }
+  finally { if (conn) await conn.end(); }
+});
+
+// GET /actas/api/mis-equipos — equipos asignados al usuario en GLPI
+router.get('/api/mis-equipos', requireLogin, async (req, res) => {
+  const username = (req.session.nagsa_user || '').toLowerCase();
+  let conn;
+  try {
+    conn = await getConn();
+    // Obtener user_id de GLPI
+    const [userRows] = await conn.execute('SELECT id FROM glpi_users WHERE LOWER(name)=? AND is_deleted=0 LIMIT 1', [username]);
+    if (!userRows.length) return res.json([]);
+    const userId = userRows[0].id;
+
+    const results = [];
+    const tipos = [
+      { tabla:'glpi_computers', tipo:'Computadora' },
+      { tabla:'glpi_monitors', tipo:'Monitor' },
+      { tabla:'glpi_printers', tipo:'Impresora' },
+      { tabla:'glpi_peripherals', tipo:'Periferico' },
+      { tabla:'glpi_networkequipments', tipo:'Disp. de Red' },
+      { tabla:'glpi_phones', tipo:'Telefono' },
+    ];
+    for (const t of tipos) {
+      const [rows] = await conn.execute(
+        `SELECT a.id, a.name, a.serial, a.manufacturers_id, a.states_id
+         FROM ${t.tabla} a
+         WHERE a.users_id=? AND a.is_deleted=0 AND a.is_template=0`,
+        [userId]
+      );
+      for (const r of rows) {
+        const fab = r.manufacturers_id ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[r.manufacturers_id]))[0][0]?.name || '') : '';
+        const estado = r.states_id ? ((await conn.execute('SELECT name FROM glpi_states WHERE id=? LIMIT 1',[r.states_id]))[0][0]?.name || '') : '';
+        results.push({
+          id: r.id, nombre: r.name, serie: r.serial || '---',
+          fabricante: fab, tipo: t.tipo, estado, tabla: t.tabla,
+        });
+      }
+    }
+    res.json(results);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+  finally { if (conn) await conn.end(); }
+});
+
+// POST /actas/api/solicitar-salida — N3/N4 solicita salida de equipo
+router.post('/api/solicitar-salida', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  // Solo N3/N4 solicitan (N1/N2 crean salida directa)
+  if (nivelInfo.nivel > 4) return res.status(403).json({ error: 'Sin acceso' });
+
+  const input = req.body;
+  if (!input || !input.equipos || !input.equipos.length) {
+    return res.status(400).json({ error: 'Debe seleccionar al menos un equipo' });
+  }
+
+  const data = loadData();
+  const id = data.next_id;
+  const numero = 'SOL-' + String(id).padStart(3, '0');
+  const now = new Date().toISOString().replace('T',' ').slice(0,19);
+
+  const acta = {
+    id, numero, tipo: 'salida',
+    fecha: new Date().toISOString().slice(0,10),
+    lugar: input.lugar || null,
+    destino: input.destino || null,
+    entregado_por: null,
+    entregado_cargo: null,
+    entregado_username: null,
+    recibido_por: null,
+    recibido_cargo: null,
+    recibido_username: null,
+    autorizado_por: null,
+    autorizado_cargo: null,
+    motivo: input.motivo || null,
+    retira_persona: req.session.nagsa_name || req.session.nagsa_user,
+    retira_cargo: input.cargo || null,
+    retira_username: req.session.nagsa_user,
+    observaciones: input.observaciones || null,
+    equipos: input.equipos,
+    total_equipos: input.equipos.length,
+    estado: 'pendiente_autorizacion',
+    aceptada_por: null, aceptada_fecha: null,
+    aceptada_observaciones: null, firma_digital: null,
+    created_by: req.session.nagsa_user,
+    created_at: now, updated_at: now,
+  };
+  data.actas.push(acta);
+  data.next_id = id + 1;
+  saveData(data);
+  res.json({ ok: true, id, numero });
+});
+
+// GET /actas/api/solicitudes-pendientes — solicitudes pendientes de autorizar (solo TI)
+router.get('/api/solicitudes-pendientes', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel > 2) return res.status(403).json({ count: 0, actas: [] });
+
+  const data = loadData();
+  const pendientes = data.actas.filter(a => a.estado === 'pendiente_autorizacion');
+  pendientes.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  res.json({
+    count: pendientes.length,
+    actas: pendientes.map(a => ({
+      id: a.id, numero: a.numero, tipo: a.tipo, fecha: a.fecha,
+      retira_persona: a.retira_persona, retira_username: a.retira_username,
+      motivo: a.motivo, destino: a.destino,
+      total_equipos: a.total_equipos, created_by: a.created_by, created_at: a.created_at,
+    })),
+  });
+});
+
+// POST /actas/api/autorizar-solicitud — N1/N2 aprueba o rechaza solicitud
+router.post('/api/autorizar-solicitud', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel > 2) return res.status(403).json({ error: 'Solo TI puede autorizar' });
+
+  const { id, accion, observaciones } = req.body;
+  if (!id || !['autorizada','rechazada'].includes(accion)) {
+    return res.status(400).json({ error: 'Datos incompletos' });
+  }
+
+  const data = loadData();
+  const now = new Date().toISOString().replace('T',' ').slice(0,19);
+  const pc = cfg.permisos_config || {};
+  const nombreArea = pc.ti_nombre_area || 'TI';
+
+  for (const acta of data.actas) {
+    if (acta.id === parseInt(id) && acta.estado === 'pendiente_autorizacion') {
+      acta.estado = accion;
+      acta.autorizado_por = nombreArea;
+      acta.autorizado_cargo = req.session.nagsa_name || req.session.nagsa_user;
+      acta.aceptada_por = req.session.nagsa_name || req.session.nagsa_user;
+      acta.aceptada_fecha = now;
+      acta.aceptada_observaciones = observaciones || null;
+      acta.updated_at = now;
+      saveData(data);
+      return res.json({ ok: true });
+    }
+  }
+  res.status(409).json({ error: 'Solicitud ya procesada o no existe' });
 });
 
 module.exports = router;
