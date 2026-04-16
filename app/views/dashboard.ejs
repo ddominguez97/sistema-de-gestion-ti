@@ -33,6 +33,27 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 .module-card .card-footer{font-size:10px;color:var(--text-muted);margin-top:auto;padding-top:10px;border-top:1px solid var(--border);}
 .section-label{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--color-principal);margin:32px 0 14px;}
 .section-label:first-child{margin-top:0;}
+/* Notificaciones panel */
+.notif-bell{position:relative;background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:14px;color:var(--text-sub);line-height:1;cursor:pointer;text-decoration:none;}
+.notif-bell:hover{border-color:var(--color-principal);}
+.notif-badge{position:absolute;top:-6px;right:-6px;background:color-mix(in srgb, var(--color-principal) 15%, var(--bg-card));color:var(--color-principal);font-size:9px;font-weight:800;border-radius:50%;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;display:none;border:1px solid color-mix(in srgb, var(--color-principal) 30%, transparent);}
+#notif-wrap a.notif-item{background:none!important;padding:12px 16px!important;border-radius:0!important;color:var(--text-main)!important;font-size:inherit!important;}
+#notif-wrap a.notif-item:hover{opacity:0.7;}
+.notif-panel{display:none;position:absolute;top:calc(100% + 8px);right:0;width:340px;max-height:400px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.2);z-index:200;overflow:hidden;}
+.notif-panel.show{display:block;}
+.notif-panel-header{padding:12px 16px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--color-principal);border-bottom:1px solid var(--border);}
+.notif-panel-body{max-height:300px;overflow-y:auto;}
+.notif-item{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;text-decoration:none;color:var(--text-main);}
+.notif-item:hover{opacity:0.7;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item-icon{font-size:18px;flex-shrink:0;margin-top:2px;color:var(--text-muted);}
+.notif-item-text{flex:1;}
+.notif-item-title{font-size:12px;font-weight:700;color:var(--text-main);}
+.notif-item-desc{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.notif-item-time{font-size:10px;color:var(--text-muted);margin-top:3px;}
+.notif-panel-footer{padding:10px 16px;text-align:center;border-top:1px solid var(--border);}
+.notif-panel-footer a{font-size:11px;font-weight:700;color:var(--color-principal);text-decoration:none;}
+.notif-empty{padding:24px;text-align:center;color:var(--text-muted);font-size:12px;}
 </style>
 <%- include('partials/branding') %>
 </head>
@@ -45,6 +66,16 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
     <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;" id="tema-btn"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
+    <div style="position:relative;" id="notif-wrap">
+      <button class="notif-bell" onclick="toggleNotifPanel()" title="Notificaciones">&#128276;<span class="notif-badge" id="notif-badge"></span></button>
+      <div class="notif-panel" id="notif-panel">
+        <div class="notif-panel-header">Notificaciones</div>
+        <div class="notif-panel-body" id="notif-panel-body">
+          <div class="notif-empty">Cargando...</div>
+        </div>
+        <div class="notif-panel-footer"><a id="notif-vertodas" href="/reportes">Ver todas &rarr;</a></div>
+      </div>
+    </div>
     <% if (typeof showAdmin !== 'undefined' && showAdmin) { %><a href="/admin" title="Configuracion">&#x2699;&#xFE0F;</a><% } %>
     <a href="/logout">Salir</a>
   </div>
@@ -53,8 +84,8 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="welcome">
     <h1>Bienvenido, <%= session.nagsa_firstname || (session.nagsa_name || session.nagsa_user).split(' ')[0] %></h1>
     <p>Selecciona el modulo con el que deseas trabajar.</p>
-    <div id="notif-pendientes" style="display:none;margin-top:12px;padding:12px 16px;border-radius:8px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);cursor:pointer;" onclick="window.location='/reportes'">
-      <span style="font-size:13px;color:#d39e00;font-weight:700;" id="notif-texto"></span>
+    <div id="notif-pendientes" style="display:none;margin-top:12px;padding:12px 16px;border-radius:8px;background:color-mix(in srgb, var(--color-principal) 8%, var(--bg-body));border:1px solid color-mix(in srgb, var(--color-principal) 25%, transparent);cursor:pointer;" onclick="window.location=dashNivel<=2?'/reportes?tab=pendientes-salida':'/reportes?tab=mis-pendientes'">
+      <span style="font-size:13px;color:var(--color-principal);font-weight:700;" id="notif-texto"></span>
     </div>
   </div>
 <%
@@ -124,13 +155,113 @@ function renderCards(grupo, estado) {
 <% } %>
 </div>
 <script>
-// Verificar actas pendientes
-fetch('/actas/api/pendientes').then(r=>r.json()).then(data=>{
-  if(data.count>0){
-    document.getElementById('notif-pendientes').style.display='block';
-    document.getElementById('notif-texto').textContent='Tienes '+data.count+' acta'+(data.count>1?'s':'')+' pendiente'+(data.count>1?'s':'')+' de firmar';
+// Notificaciones segun nivel
+const dashNivel = <%= typeof nivelInfo !== 'undefined' ? nivelInfo.nivel : 4 %>;
+let notifItems = [];
+
+function toggleNotifPanel() {
+  document.getElementById('notif-panel').classList.toggle('show');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#notif-wrap')) document.getElementById('notif-panel').classList.remove('show');
+});
+
+function tiempoRelativo(fecha) {
+  const diff = Math.floor((Date.now() - new Date(fecha).getTime()) / 1000);
+  if (diff < 60) return 'hace un momento';
+  if (diff < 3600) return 'hace ' + Math.floor(diff/60) + ' min';
+  if (diff < 86400) return 'hace ' + Math.floor(diff/3600) + ' hora' + (Math.floor(diff/3600)>1?'s':'');
+  const dias = Math.floor(diff/86400);
+  return 'hace ' + dias + ' dia' + (dias>1?'s':'');
+}
+
+async function cargarNotificaciones() {
+  const body = document.getElementById('notif-panel-body');
+  const badge = document.getElementById('notif-badge');
+  notifItems = [];
+
+  try {
+    if (dashNivel <= 2) {
+      // TI: solicitudes pendientes de autorizar
+      const res = await fetch('/actas/api/solicitudes-pendientes');
+      const data = await res.json();
+      (data.actas || []).forEach(a => {
+        notifItems.push({
+          icon: '&bull;',
+          titulo: (a.retira_persona || a.created_by) + ' solicita salida',
+          desc: a.motivo || 'Solicitud de salida de equipo',
+          tiempo: tiempoRelativo(a.created_at),
+          url: '/reportes',
+        });
+      });
+    } else {
+      // N3/N4: entregas pendientes + estado solicitudes
+      const res = await fetch('/actas/api/mis-pendientes');
+      const data = await res.json();
+      data.forEach(a => {
+        if (a.estado === 'pendiente') {
+          notifItems.push({
+            icon: '&bull;',
+            titulo: 'Equipo entregado',
+            desc: a.numero + ' - ' + a.total_equipos + ' equipo' + (a.total_equipos>1?'s':'') + ' pendiente de aceptar',
+            tiempo: tiempoRelativo(a.created_at),
+            url: '/reportes',
+          });
+        } else if (a.estado === 'pendiente_autorizacion') {
+          notifItems.push({
+            icon: '&bull;',
+            titulo: 'Solicitud en espera',
+            desc: a.numero + ' - Esperando autorizacion de TI',
+            tiempo: tiempoRelativo(a.created_at),
+            url: '/reportes',
+          });
+        } else if (a.estado === 'autorizada') {
+          notifItems.push({
+            icon: '&bull;',
+            titulo: 'Solicitud autorizada',
+            desc: a.numero + ' - Tu solicitud fue autorizada',
+            tiempo: tiempoRelativo(a.created_at),
+            url: '/reportes',
+          });
+        } else if (a.estado === 'rechazada') {
+          notifItems.push({
+            icon: '&bull;',
+            titulo: 'Solicitud rechazada',
+            desc: a.numero + ' - Tu solicitud fue rechazada',
+            tiempo: tiempoRelativo(a.created_at),
+            url: '/reportes',
+          });
+        }
+      });
+    }
+  } catch(e) {}
+
+  // URL segun nivel
+  const notifUrl = dashNivel <= 2 ? '/reportes?tab=pendientes-salida' : '/reportes?tab=mis-pendientes';
+  document.getElementById('notif-vertodas').href = notifUrl;
+  notifItems.forEach(n => n.url = notifUrl);
+
+  // Renderizar
+  const total = notifItems.length;
+  if (total > 0) {
+    badge.textContent = total;
+    badge.style.display = 'flex';
+    body.innerHTML = notifItems.map(n =>
+      '<a class="notif-item" href="' + n.url + '">' +
+      '<span class="notif-item-icon">' + n.icon + '</span>' +
+      '<div class="notif-item-text"><div class="notif-item-title">' + n.titulo + '</div>' +
+      '<div class="notif-item-desc">' + n.desc + '</div>' +
+      '<div class="notif-item-time">' + n.tiempo + '</div></div></a>'
+    ).join('');
+    // Banner
+    document.getElementById('notif-pendientes').style.display = 'block';
+    document.getElementById('notif-texto').textContent = total + ' notificacion' + (total>1?'es':'') + ' pendiente' + (total>1?'s':'');
+  } else {
+    badge.style.display = 'none';
+    body.innerHTML = '<div class="notif-empty">No tienes notificaciones pendientes.</div>';
   }
-}).catch(()=>{});
+}
+cargarNotificaciones();
 
 function toggleTema(){
   const actual='<%= branding.tema %>';

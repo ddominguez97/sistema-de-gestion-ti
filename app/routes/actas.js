@@ -506,7 +506,9 @@ router.get('/api/solicitudes-pendientes', requireLogin, (req, res) => {
   if (nivelInfo.nivel > 2) return res.status(403).json({ count: 0, actas: [] });
 
   const data = loadData();
-  const pendientes = data.actas.filter(a => a.estado === 'pendiente_autorizacion');
+  const pendientes = data.actas.filter(a =>
+    a.estado === 'pendiente_autorizacion' || (a.tipo === 'salida' && a.estado === 'pendiente')
+  );
   pendientes.sort((a, b) => b.created_at.localeCompare(a.created_at));
   res.json({
     count: pendientes.length,
