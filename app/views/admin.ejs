@@ -63,7 +63,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
-    <div class="sub">Panel de Configuracion</div>
+    <div class="sub">Panel de Configuración</div>
   </div>
   <div class="actions">
     <a href="/" class="btn-back">Dashboard &rarr;</a>
@@ -75,19 +75,19 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="login-card" style="max-width:420px;">
     <div style="text-align:center;margin-bottom:20px;">
       <div style="font-size:48px;margin-bottom:8px;">&#128272;</div>
-      <div style="font-size:16px;font-weight:700;color:var(--text-main);">Configuracion Inicial</div>
+      <div style="font-size:16px;font-weight:700;color:var(--text-main);">Configuración Inicial</div>
       <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Primera vez que accedes al sistema</div>
     </div>
     <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
     <div style="padding:12px;border-radius:8px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);margin-bottom:16px;">
       <div style="font-size:11px;color:#d39e00;font-weight:700;margin-bottom:4px;">Clave temporal generada:</div>
       <div style="font-size:20px;font-weight:900;color:var(--text-main);letter-spacing:2px;text-align:center;padding:8px 0;font-family:monospace;"><%= typeof tempKey !== 'undefined' ? tempKey : '' %></div>
-      <div style="font-size:10px;color:var(--text-muted);">Guarda esta clave como respaldo. Ahora crea tu propia contrasena.</div>
+      <div style="font-size:10px;color:var(--text-muted);">Guarda esta clave como respaldo. Ahora crea tu propia contraseña.</div>
     </div>
     <form method="POST" action="/admin/setup">
-      <div class="fg"><label>Nueva contrasena (minimo 6 caracteres)</label><input type="password" name="new_password" placeholder="Tu nueva contrasena" autofocus required minlength="6" style="padding:9px 12px;"></div>
-      <div class="fg"><label>Confirmar contrasena</label><input type="password" id="confirm_pass" placeholder="Repite la contrasena" required style="padding:9px 12px;"></div>
-      <button type="submit" onclick="if(this.form.new_password.value!==document.getElementById('confirm_pass').value){toast('Las contrasenas no coinciden','error');return false;}" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Crear contrasena y continuar</button>
+      <div class="fg"><label>Nueva contraseña (mínimo 6 caracteres)</label><input type="password" name="new_password" placeholder="Tu nueva contraseña" autofocus required minlength="6" style="padding:9px 12px;"></div>
+      <div class="fg"><label>Confirmar contraseña</label><input type="password" id="confirm_pass" placeholder="Repite la contraseña" required style="padding:9px 12px;"></div>
+      <button type="submit" onclick="if(this.form.new_password.value!==document.getElementById('confirm_pass').value){toast('Las contraseñas no coinciden','error');return false;}" style="width:100%;padding:12px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">Crear contraseña y continuar</button>
     </form>
   </div>
 </div>
@@ -96,20 +96,20 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <div class="login-card">
     <div style="text-align:center;margin-bottom:20px;">
       <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:48px;object-fit:contain;margin-bottom:10px;">
-      <div style="font-size:14px;font-weight:700;color:var(--text-main);">Panel de Administracion</div>
-      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Ingresa la contrasena de administrador</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text-main);">Panel de Administración</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">Ingresa la contraseña de administrador</div>
     </div>
     <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
     <form method="POST" action="/admin/login">
-      <div class="fg"><label>Contrasena</label><input type="password" name="password" placeholder="••••••••" autofocus style="padding:9px 12px;"></div>
+      <div class="fg"><label>Contraseña</label><input type="password" name="password" placeholder="••••••••" autofocus style="padding:9px 12px;"></div>
       <button type="submit" style="width:100%;padding:10px;border-radius:6px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">&#128272; Ingresar</button>
     </form>
   </div>
 </div>
 <% } else { %>
 <div class="body">
-  <div class="page-title">&#9881;&#65039; Panel de Configuracion</div>
-  <div class="page-sub">Ajustes de conexion, personalizacion e impresion</div>
+  <div class="page-title">&#9881;&#65039; Panel de Configuración</div>
+  <div class="page-sub">Ajustes de conexión, personalización e impresión</div>
   <% if (msg) { %><div class="msg <%= msgType %>"><%= msg %></div><% } %>
 
   <!-- Fila 1: BD | GLPI | Zebra | SQL Express | AD (grid3 con wrap) -->
@@ -127,14 +127,14 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
           <div class="fg"><label>Nombre BD</label><input type="text" name="db_name" value="<%= cfg.db_name || '' %>"></div>
           <div class="fg"><label>Usuario</label><input type="text" name="db_user" value="<%= cfg.db_user || '' %>"></div>
         </div>
-        <div class="fg"><label>Contrasena</label><input type="password" name="db_pass" value="<%= cfg.db_pass || '' %>"></div>
+        <div class="fg"><label>Contraseña</label><input type="password" name="db_pass" value="<%= cfg.db_pass || '' %>"></div>
       </div>
       <div class="cf"><button type="submit" class="bs">Guardar y verificar</button></div>
     </form>
 
     <!-- GLPI -->
     <form method="POST" action="/admin/save-glpi" class="card">
-      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128279;</div><div><div class="ct">GLPI</div><div class="cd">Conexion con GLPI 11</div></div></div>
+      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128279;</div><div><div class="ct">GLPI</div><div class="cd">Conexión con GLPI 11</div></div></div>
       <div class="cb">
         <div class="fg"><label>Entity ID (0 = todas)</label><input type="number" name="entity_id" value="<%= cfg.entity_id || 0 %>"></div>
         <div class="fg"><label>URL base (para QR)</label><input type="url" name="base_url" value="<%= cfg.base_url || '' %>"></div>
@@ -169,8 +169,8 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
         <% const ldb = cfg.local_db || {}; %>
         <div class="fg"><label>Servidor</label><input type="text" name="local_server" value="<%= ldb.server || 'localhost\\SQLEXPRESS' %>"></div>
         <div class="fg"><label>Base de datos</label><input type="text" name="local_database" value="<%= ldb.database || 'SistemaNG' %>"></div>
-        <div class="fg"><label>Usuario (vacio = Windows Auth)</label><input type="text" name="local_user" value="<%= ldb.user || '' %>"></div>
-        <div class="fg"><label>Contrasena</label><input type="password" name="local_password" value="<%= ldb.password || '' %>"></div>
+        <div class="fg"><label>Usuario (vacío = Windows Auth)</label><input type="text" name="local_user" value="<%= ldb.user || '' %>"></div>
+        <div class="fg"><label>Contraseña</label><input type="password" name="local_password" value="<%= ldb.password || '' %>"></div>
       </div>
       <div class="cf"><button type="submit" class="bs">Guardar</button></div>
     </form>
@@ -178,10 +178,10 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <!-- Active Directory -->
     <% const adModo = ad.modo || 'automatica'; %>
     <form method="POST" action="/admin/save-ad" class="card">
-      <div class="ch"><div class="ci" style="background:#FFF3E0;">&#128273;</div><div><div class="ct">Active Directory</div><div class="cd">Autenticacion LDAP</div></div></div>
+      <div class="ch"><div class="ci" style="background:#FFF3E0;">&#128273;</div><div><div class="ct">Active Directory</div><div class="cd">Autenticación LDAP</div></div></div>
       <div class="cb">
         <div class="sw-row" style="margin-bottom:12px;">
-          <span id="ad-mode-label" style="font-size:12px;font-weight:700;min-width:90px;"><%= adModo === 'automatica' ? '\u26A1 Automatica' : '\u270E Manual' %></span>
+          <span id="ad-mode-label" style="font-size:12px;font-weight:700;min-width:90px;"><%= adModo === 'automatica' ? '\u26A1 Automática' : '\u270E Manual' %></span>
           <div class="sw-wrap">
             <input type="hidden" name="ad_modo" id="ad_modo" value="<%= adModo %>">
             <input type="checkbox" id="ad-mode-check" <%= adModo === 'automatica' ? 'checked' : '' %> onchange="toggleAdMode()">
@@ -203,7 +203,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
           </div>
           <% } else { %>
           <div style="padding:10px 12px;border-radius:7px;background:rgba(255,193,7,0.1);border:1px solid rgba(255,193,7,0.3);font-size:11px;color:#d39e00;">
-            &#9888; No se detecto LDAP en la base de datos de GLPI. Configura primero la conexion a la BD o cambia a modo manual.
+            &#9888; No se detectó LDAP en la base de datos de GLPI. Configura primero la conexión a la BD o cambia a modo manual.
           </div>
           <% } %>
         </div>
@@ -225,7 +225,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
     <!-- Personalizacion -->
     <div class="card">
-      <div class="ch"><div class="ci" style="background:#FFF0E8;">&#127912;</div><div><div class="ct">Personalizacion</div><div class="cd">Marca visual</div></div></div>
+      <div class="ch"><div class="ci" style="background:#FFF0E8;">&#127912;</div><div><div class="ct">Personalización</div><div class="cd">Marca visual</div></div></div>
       <div class="cb">
         <!-- Logo -->
         <div class="fg">
@@ -262,7 +262,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
     <!-- Estado de modulos -->
     <form method="POST" action="/admin/save-modulos" class="card">
-      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128268;</div><div><div class="ct">Estado de Modulos</div><div class="cd">Activar o desactivar modulos del sistema</div></div></div>
+      <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128268;</div><div><div class="ct">Estado de Módulos</div><div class="cd">Activar o desactivar módulos del sistema</div></div></div>
       <div class="cb">
         <% const mods = cfg.modulos || {}; const modLabels = { etiquetas: '\u{1F3F7}\u{FE0F} Etiquetas', actas: '\u{1F4CB} Actas', reportes: '\u{1F4CA} Reportes', inversiones: '\u{1F4B0} Inversiones', permisos: '\u{1F514} Permisos y Notif.' }; %>
         <% for (const [key, label] of Object.entries(modLabels)) { const estado = mods[key] || 'deshabilitado'; %>
@@ -281,22 +281,22 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
     <!-- Categorias -->
     <form method="POST" action="/admin/save-cats" class="card">
-      <div class="ch"><div class="ci" style="background:#F0E8FF;">&#128203;</div><div><div class="ct">Categorias a Mostrar</div><div class="cd">Visibles en el modulo de etiquetas</div></div></div>
+      <div class="ch"><div class="ci" style="background:#F0E8FF;">&#128203;</div><div><div class="ct">Categorías a Mostrar</div><div class="cd">Visibles en el módulo de etiquetas</div></div></div>
       <div class="cb">
         <div class="cats">
           <label class="cat-item"><input type="checkbox" name="show_comp" <%= show.computadoras ? 'checked' : '' %>> &#x1F4BB; Computadoras</label>
           <label class="cat-item"><input type="checkbox" name="show_mon" <%= show.monitores ? 'checked' : '' %>> &#x1F5A5; Monitores</label>
           <label class="cat-item"><input type="checkbox" name="show_imp" <%= show.impresoras ? 'checked' : '' %>> &#x1F5A8;&#xFE0F; Impresoras</label>
-          <label class="cat-item"><input type="checkbox" name="show_per" <%= show.perifericos ? 'checked' : '' %>> &#x1F5B1; Perifericos</label>
+          <label class="cat-item"><input type="checkbox" name="show_per" <%= show.perifericos ? 'checked' : '' %>> &#x1F5B1; Periféricos</label>
           <label class="cat-item"><input type="checkbox" name="show_red" <%= show.redes ? 'checked' : '' %>> &#x1F310; Disp. de Red</label>
           <label class="cat-item"><input type="checkbox" name="show_gab" <%= show.gabinetes ? 'checked' : '' %>> &#x1F5C4; Gabinetes</label>
           <label class="cat-item"><input type="checkbox" name="show_pas" <%= show.pasivos ? 'checked' : '' %>> &#x1F50C; Disp. Pasivos</label>
           <label class="cat-item"><input type="checkbox" name="show_car" <%= show.cartuchos ? 'checked' : '' %>> &#x1FA78; Cartuchos</label>
           <label class="cat-item"><input type="checkbox" name="show_con" <%= show.consumibles ? 'checked' : '' %>> &#x1F4E6; Consumibles</label>
-          <label class="cat-item"><input type="checkbox" name="show_tel" <%= show.telefonos ? 'checked' : '' %>> &#x1F4F1; Telefonos</label>
+          <label class="cat-item"><input type="checkbox" name="show_tel" <%= show.telefonos ? 'checked' : '' %>> &#x1F4F1; Teléfonos</label>
         </div>
       </div>
-      <div class="cf"><button type="submit" class="bs">Guardar categorias</button></div>
+      <div class="cf"><button type="submit" class="bs">Guardar categorías</button></div>
     </form>
 
 
@@ -345,7 +345,7 @@ function subirLogo() {
         msgEl.textContent = data.msg;
       }
     })
-    .catch(() => { msgEl.style.color = 'red'; msgEl.textContent = 'Error de conexion.'; });
+    .catch(() => { msgEl.style.color = 'red'; msgEl.textContent = 'Error de conexión.'; });
 }
 
 // Buscar impresora en GLPI
@@ -391,7 +391,7 @@ function toggleAdMode() {
   document.getElementById('ad_modo').value = modo;
   document.getElementById('ad-mode-track').style.background = chk.checked ? 'var(--color-principal)' : '#555';
   document.getElementById('ad-mode-knob').style.left = chk.checked ? '25px' : '3px';
-  document.getElementById('ad-mode-label').textContent = chk.checked ? '\u26A1 Automatica' : '\u270E Manual';
+  document.getElementById('ad-mode-label').textContent = chk.checked ? '\u26A1 Automática' : '\u270E Manual';
   document.getElementById('ad-auto-section').style.display = modo === 'automatica' ? 'block' : 'none';
   document.getElementById('ad-manual-section').style.display = modo === 'manual' ? 'block' : 'none';
 }

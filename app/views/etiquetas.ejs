@@ -87,7 +87,7 @@ body{display:flex;height:100vh;background:var(--bg-body);color:var(--text-main);
 <div id="sidebar">
   <div class="sb-logo">
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:32px;object-fit:contain;margin-bottom:4px;"></a>
-    <div class="sub">Gestion de Activos TI</div>
+    <div class="sub">Gestión de Activos TI</div>
   </div>
   <div id="sb-search">
     <div class="sb-section">Buscar etiqueta</div>
@@ -103,13 +103,13 @@ body{display:flex;height:100vh;background:var(--bg-body);color:var(--text-main);
   <label class="sb-item"><input type="checkbox" id="chk_comp" checked><span class="icon">&#x1F4BB;</span><span style="flex:1;">Computadoras</span><span class="badge" id="cnt_comp">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_mon"><span class="icon">&#x1F5A5;&#xFE0F;</span><span style="flex:1;">Monitores</span><span class="badge" id="cnt_mon">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_imp"><span class="icon">&#x1F5A8;&#xFE0F;</span><span style="flex:1;">Impresoras</span><span class="badge" id="cnt_imp">0</span></label>
-  <label class="sb-item"><input type="checkbox" id="chk_per"><span class="icon">&#x1F579;&#xFE0F;</span><span style="flex:1;">Perifericos</span><span class="badge" id="cnt_per">0</span></label>
+  <label class="sb-item"><input type="checkbox" id="chk_per"><span class="icon">&#x1F579;&#xFE0F;</span><span style="flex:1;">Periféricos</span><span class="badge" id="cnt_per">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_red"><span class="icon">&#x1F310;</span><span style="flex:1;">Disp. de Red</span><span class="badge" id="cnt_red">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_gab"><span class="icon">&#x1F5C4;</span><span style="flex:1;">Gabinetes</span><span class="badge" id="cnt_gab">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_pas"><span class="icon">&#x1F4E1;</span><span style="flex:1;">Disp. Pasivos</span><span class="badge" id="cnt_pas">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_car"><span class="icon">&#x1FA78;</span><span style="flex:1;">Cartuchos</span><span class="badge" id="cnt_car">0</span></label>
   <label class="sb-item"><input type="checkbox" id="chk_con"><span class="icon">&#x1F4E6;</span><span style="flex:1;">Consumibles</span><span class="badge" id="cnt_con">0</span></label>
-  <label class="sb-item"><input type="checkbox" id="chk_tel"><span class="icon">&#x1F4F1;</span><span style="flex:1;">Telefonos</span><span class="badge" id="cnt_tel">0</span></label>
+  <label class="sb-item"><input type="checkbox" id="chk_tel"><span class="icon">&#x1F4F1;</span><span style="flex:1;">Teléfonos</span><span class="badge" id="cnt_tel">0</span></label>
   <div class="sb-section" style="margin-top:12px;">Campos a mostrar</div>
   <label class="campo-item"><input type="checkbox" id="f_nombre" checked><span style="flex:1;">Nombre</span><span class="dot"></span></label>
   <label class="campo-item"><input type="checkbox" id="f_fab" checked><span style="flex:1;">Fabricante</span><span class="dot"></span></label>
@@ -118,8 +118,8 @@ body{display:flex;height:100vh;background:var(--bg-body);color:var(--text-main);
   <label class="campo-item"><input type="checkbox" id="f_tipo"><span style="flex:1;">Tipo</span><span class="dot"></span></label>
   <label class="campo-item"><input type="checkbox" id="f_ip"><span style="flex:1;">IP</span><span class="dot"></span></label>
   <label class="campo-item"><input type="checkbox" id="f_user"><span style="flex:1;">Usuario</span><span class="dot"></span></label>
-  <label class="campo-item"><input type="checkbox" id="f_qr" checked><span style="flex:1;">Codigo QR</span><span class="dot"></span></label>
-  <div class="sb-section" style="margin-top:12px;">Tamano de etiqueta</div>
+  <label class="campo-item"><input type="checkbox" id="f_qr" checked><span style="flex:1;">Código QR</span><span class="dot"></span></label>
+  <div class="sb-section" style="margin-top:12px;">Tamaño de etiqueta</div>
   <button class="size-btn active" id="btn58" onclick="setSize(58)">&#x1F3F7;&#xFE0F; 58 x 39 mm</button>
   <button class="size-btn" id="btn100" onclick="setSize(100)">&#x1F3F7;&#xFE0F; 100 x 60 mm</button>
   <div id="label-counter" class="counter-badge">Cargando...</div>
@@ -128,7 +128,7 @@ body{display:flex;height:100vh;background:var(--bg-body);color:var(--text-main);
 </div>
 <div id="main">
   <div class="page-header">
-    <a href="/" style="padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);flex-shrink:0;">&larr; Menu</a>
+    <a href="/" style="padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);flex-shrink:0;">&larr; Menú</a>
     <h1>&#x1F3F7;&#xFE0F; Etiquetas de Activos TI &mdash; <%= branding.nombre %></h1>
     <span class="total-badge" id="top-badge">Cargando...</span>
     <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
@@ -143,7 +143,7 @@ body{display:flex;height:100vh;background:var(--bg-body);color:var(--text-main);
     <div id="preview-header"><span>&#128065; Vista Previa de Etiqueta</span><button onclick="closePreview()">&#10005;</button></div>
     <div id="preview-content"></div>
     <div id="preview-actions">
-      <button id="btn-selection" onclick="addToSelection()" style="background:var(--bg-dark3);color:var(--text-main);">&#9745; Agregar a seleccion</button>
+      <button id="btn-selection" onclick="addToSelection()" style="background:var(--bg-dark3);color:var(--text-main);">&#9745; Agregar a selección</button>
       <button onclick="printPreview()" style="background:var(--color-principal);color:var(--text-main);">&#128424; Imprimir esta</button>
     </div>
   </div>
@@ -159,7 +159,7 @@ function mkLabel(item,size){
   const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const fields=[f.nombre?'<div class="lbl-field"><span class="fl">Nombre</span><span class="fv">'+esc(item.nombre)+'</span></div>':'',f.fab?'<div class="lbl-field"><span class="fl">Fabricante</span><span class="fv">'+esc(item.fabricante)+'</span></div>':'',f.mod?'<div class="lbl-field"><span class="fl">Modelo</span><span class="fv">'+esc(item.modelo||'---')+'</span></div>':'',f.serie?'<div class="lbl-field"><span class="fl">S/N</span><span class="fv">'+esc(item.serie||'---')+'</span></div>':'',f.tipo?'<div class="lbl-field"><span class="fl">Tipo</span><span class="fv">'+esc(item.tipo||'---')+'</span></div>':'',f.ip?'<div class="lbl-field"><span class="fl">IP</span><span class="fv">'+esc(item.ip||'---')+'</span></div>':'',f.user?'<div class="lbl-field"><span class="fl">Usuario</span><span class="fv">'+esc(item.usuario||'')+'</span></div>':''].filter(Boolean).join('');
   const qrHTML=f.qr?'<div class="lbl-qr"><img id="qr_'+item.id+'" src="" alt="QR"></div>':'';
-  return '<div class="label-'+size+'" data-asset-id="'+item.id+'" data-categoria="'+esc(item.activo)+'" data-activo="'+esc(item.nombre)+'" data-qr-url="'+esc(item.qr_url)+'" onclick="toggleSelect(this)" ondblclick="openPreview(this)"><div class="lbl-header"><span class="org">'+(window.NAGSA_NOMBRE||'NAGSA')+' &mdash; '+esc(item.nombre)+'</span></div><div class="lbl-body"><div class="lbl-info">'+fields+'</div>'+qrHTML+'</div><div class="lbl-footer">'+(window.NAGSA_NOMBRE||'NAGSA')+' &middot; Gestion de Activos TI &middot; '+(window.NAGSA_URL||'glpi.nagsa.com.ec')+'</div></div>';
+  return '<div class="label-'+size+'" data-asset-id="'+item.id+'" data-categoria="'+esc(item.activo)+'" data-activo="'+esc(item.nombre)+'" data-qr-url="'+esc(item.qr_url)+'" onclick="toggleSelect(this)" ondblclick="openPreview(this)"><div class="lbl-header"><span class="org">'+(window.NAGSA_NOMBRE||'NAGSA')+' &mdash; '+esc(item.nombre)+'</span></div><div class="lbl-body"><div class="lbl-info">'+fields+'</div>'+qrHTML+'</div><div class="lbl-footer">'+(window.NAGSA_NOMBRE||'NAGSA')+' &middot; Gestión de Activos TI &middot; '+(window.NAGSA_URL||'glpi.nagsa.com.ec')+'</div></div>';
 }
 
 async function generateQRs(labels){const arr=Array.from(labels);for(let i=0;i<arr.length;i+=15){await Promise.all(arr.slice(i,i+15).map(async label=>{const url=label.getAttribute('data-qr-url');const id=label.getAttribute('data-asset-id');const img=document.getElementById('qr_'+id);if(img&&url){const src=await makeQR(url);if(src)img.src=src;}}));await new Promise(r=>setTimeout(r,30));}}

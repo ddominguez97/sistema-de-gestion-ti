@@ -67,6 +67,8 @@ app.get('/proximamente', (req, res) => {
   res.render('proximamente', { titulo: nombres[m] || 'Nuevo Modulo' });
 });
 
+app.get('/inversiones', (req, res) => res.redirect('/proximamente?m=inversiones'));
+
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));

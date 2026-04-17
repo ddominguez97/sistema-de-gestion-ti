@@ -97,7 +97,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
     <div class="sub">Sistema de Actas</div>
   </div>
-  <a href="/" class="btn-back">&larr; Menu</a>
+  <a href="/" class="btn-back">&larr; Menú</a>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
     <a href="/logout" class="btn-logout">Salir</a>
@@ -109,7 +109,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="container">
   <div class="card">
     <div class="section-title">Solicitar Salida de Equipo</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Selecciona los equipos que necesitas retirar. La solicitud sera enviada a TI para su autorizacion.</div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Selecciona los equipos que necesitas retirar. La solicitud será enviada a TI para su autorización.</div>
     <div class="form-grid" style="margin-top:0;">
       <div class="form-group"><label>Solicitado por</label><input type="text" id="sol-persona" value="<%= session.nagsa_name || session.nagsa_user %>" readonly style="opacity:0.7;"></div>
       <div class="form-group"><label>Cargo / Departamento</label><input type="text" id="sol-cargo" placeholder="Tu cargo o departamento"></div>
@@ -197,12 +197,13 @@ async function enviarSolicitud() {
   });
   const data = await res.json();
   if (data.ok) {
-    toast('Solicitud ' + data.numero + ' enviada. TI sera notificado.');
+    toast('Solicitud ' + data.numero + ' enviada. TI será notificado.');
     // Reset
     equiposSeleccionados.clear();
     document.querySelectorAll('#sol-equipos-list input[type="checkbox"]').forEach(cb => cb.checked = false);
     document.getElementById('sol-motivo').value = '';
     document.getElementById('sol-obs').value = '';
+    document.getElementById('sol-cargo').value = '';
   } else {
     toast(data.error || 'Error al enviar solicitud', 'error');
   }
@@ -260,7 +261,7 @@ cargarMotivos();
     <div class="form-group"><label>Tipo</label><input type="text" id="m-tipo" placeholder="Computadora, Monitor..."></div>
     <div class="form-group"><label>Fabricante</label><input type="text" id="m-fabricante" placeholder="Fabricante"></div>
     <div class="form-group"><label>Modelo</label><input type="text" id="m-modelo" placeholder="Modelo"></div>
-    <div class="form-group"><label>S/N</label><input type="text" id="m-serie" placeholder="Numero de serie"></div>
+    <div class="form-group"><label>S/N</label><input type="text" id="m-serie" placeholder="Número de serie"></div>
     <div class="form-group"><label>Estado</label><select id="m-estado"><option value="">-- Seleccionar --</option></select></div>
   </div>
   <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
@@ -335,7 +336,7 @@ function generarActa(){
     firmasHTML=`<div class="acta-firmas"><div class="acta-firma"><div class="firma-linea"></div><div class="firma-nombre">${ep}</div><div class="firma-cargo">${ec}</div><div class="firma-cargo">Autoriza</div></div><div class="acta-firma"><div class="firma-linea"></div><div class="firma-nombre">${ret}</div><div class="firma-cargo">${retc}</div><div class="firma-cargo">Retira</div></div></div>`;
   }
 
-  document.getElementById('acta-contenido').innerHTML=`<div class="acta-header"><div class="acta-logo-row"><img src="${logo}" alt="${nombre}" onerror="this.style.display='none'" style="height:50px;"><div style="text-align:right;"><div class="acta-titulo">${tipoLabel}</div><div style="font-size:10px;color:#555;"><b>N&deg;</b> ${num}</div></div></div></div><div class="acta-meta"><span><b>Fecha:</b> ${fechaF}</span><span><b>Lugar:</b> ${lugar}</span></div>${datosHTML}<div class="acta-section"><div class="acta-section-title">Equipos (${equipos.length})</div><table class="acta-equipos-table"><thead><tr><th>#</th><th>Nombre</th><th>Tipo</th><th>Fabricante</th><th>Modelo</th><th>S/N</th></tr></thead><tbody>${eqRows}</tbody></table></div><div class="acta-section"><div class="acta-section-title">Observaciones</div><div class="acta-obs">${obs}</div></div>${firmasHTML}<div class="acta-footer">${nombre} - Gestion de Activos TI - ${window.NAGSA_URL} - ${new Date().toLocaleString('es-EC')}</div>`;
+  document.getElementById('acta-contenido').innerHTML=`<div class="acta-header"><div class="acta-logo-row"><img src="${logo}" alt="${nombre}" onerror="this.style.display='none'" style="height:50px;"><div style="text-align:right;"><div class="acta-titulo">${tipoLabel}</div><div style="font-size:10px;color:#555;"><b>N&deg;</b> ${num}</div></div></div></div><div class="acta-meta"><span><b>Fecha:</b> ${fechaF}</span><span><b>Lugar:</b> ${lugar}</span></div>${datosHTML}<div class="acta-section"><div class="acta-section-title">Equipos (${equipos.length})</div><table class="acta-equipos-table"><thead><tr><th>#</th><th>Nombre</th><th>Tipo</th><th>Fabricante</th><th>Modelo</th><th>S/N</th></tr></thead><tbody>${eqRows}</tbody></table></div><div class="acta-section"><div class="acta-section-title">Observaciones</div><div class="acta-obs">${obs}</div></div>${firmasHTML}<div class="acta-footer">${nombre} - Gestión de Activos TI - ${window.NAGSA_URL} - ${new Date().toLocaleString('es-EC')}</div>`;
   document.getElementById('acta-preview').style.display='block';document.getElementById('acta-preview').scrollIntoView({behavior:'smooth'});
 
   // Guardar

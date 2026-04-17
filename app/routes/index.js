@@ -22,7 +22,8 @@ router.get('/', async (req, res) => {
 
 // POST / — Login (AD primero, GLPI como fallback)
 router.post('/', async (req, res) => {
-  const { username, password } = req.body;
+  const { username: rawUsername, password } = req.body;
+  const username = (rawUsername || '').trim().toLowerCase();
   const cfg = res.locals.cfg;
   const manualCfg = cfg.active_directory || {};
 

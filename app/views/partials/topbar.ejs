@@ -1,14 +1,14 @@
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
     <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;">
-    <div class="sub">Sistema de Gestion de Activos TI</div>
+    <div class="sub">Sistema de Gestión de Activos TI</div>
   </div>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
     <% if (typeof showBack !== 'undefined' && showBack) { %>
       <a href="/" class="btn-back">&larr; Dashboard</a>
     <% } %>
-    <a href="/admin" title="Configuracion" class="btn-settings">&#9881;</a>
+    <a href="/admin" title="Configuración" class="btn-settings">&#9881;</a>
     <a href="/logout" class="btn-logout">Salir</a>
   </div>
 </div>

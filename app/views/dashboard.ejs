@@ -61,7 +61,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
-    <div class="sub">Sistema de Gestion de Activos TI</div>
+    <div class="sub">Sistema de Gestión de Activos TI</div>
   </div>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
@@ -76,24 +76,24 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
         <div class="notif-panel-footer"><a id="notif-vertodas" href="/reportes">Ver todas &rarr;</a></div>
       </div>
     </div>
-    <% if (typeof showAdmin !== 'undefined' && showAdmin) { %><a href="/admin" title="Configuracion">&#x2699;&#xFE0F;</a><% } %>
+    <% if (typeof showAdmin !== 'undefined' && showAdmin) { %><a href="/admin" title="Configuración">&#x2699;&#xFE0F;</a><% } %>
     <a href="/logout">Salir</a>
   </div>
 </div>
 <div class="main">
   <div class="welcome">
     <h1>Bienvenido, <%= session.nagsa_firstname || (session.nagsa_name || session.nagsa_user).split(' ')[0] %></h1>
-    <p>Selecciona el modulo con el que deseas trabajar.</p>
+    <p>Selecciona el módulo con el que deseas trabajar.</p>
     <div id="notif-pendientes" style="display:none;margin-top:12px;padding:12px 16px;border-radius:8px;background:color-mix(in srgb, var(--color-principal) 8%, var(--bg-body));border:1px solid color-mix(in srgb, var(--color-principal) 25%, transparent);cursor:pointer;" onclick="window.location=dashNivel<=2?'/reportes?tab=pendientes-salida':'/reportes?tab=mis-pendientes'">
       <span style="font-size:13px;color:var(--color-principal);font-weight:700;" id="notif-texto"></span>
     </div>
   </div>
 <%
 const todosModulos = {
-  etiquetas:   { url:'/etiquetas', icono:'\u{1F3F7}\u{FE0F}', titulo:'Etiquetas de Activos', desc:'Genera e imprime etiquetas con codigo QR para todos los activos registrados en GLPI.', footer:'Computadoras - Monitores - Impresoras - Perifericos - mas' },
-  actas:       { url:'/actas', icono:'\u{1F4CB}', titulo:'Actas de Equipos', desc:'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.', footer:'Entrega - Salida - Impresion / PDF' },
-  reportes:    { url:'/reportes', icono:'\u{1F4CA}', titulo:'Reportes y Estadisticas', desc:'Registro de actas de entrega y salida, aceptacion/resguardo, estadisticas por periodo.', footer:'Registro actas - Aceptacion / Resguardo - Estadisticas' },
-  inversiones: { url:'/proximamente?m=inversiones', icono:'\u{1F4B0}', titulo:'Formato de Inversion', desc:'Solicitudes de compra, inversion por empresa y seguimiento de adquisiciones.', footer:'Compras - Inversion - Por entidad' },
+  etiquetas:   { url:'/etiquetas', icono:'\u{1F3F7}\u{FE0F}', titulo:'Etiquetas de Activos', desc:'Genera e imprime etiquetas con código QR para todos los activos registrados en GLPI.', footer:'Computadoras - Monitores - Impresoras - Periféricos - más' },
+  actas:       { url:'/actas', icono:'\u{1F4CB}', titulo:'Actas de Equipos', desc:'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.', footer:'Entrega - Salida - Impresión / PDF' },
+  reportes:    { url:'/reportes', icono:'\u{1F4CA}', titulo:'Reportes y Estadísticas', desc:'Registro de actas de entrega y salida, aceptación/resguardo, estadísticas por período.', footer:'Registro actas - Aceptación / Resguardo - Estadísticas' },
+  inversiones: { url:'/proximamente?m=inversiones', icono:'\u{1F4B0}', titulo:'Formato de Inversión', desc:'Solicitudes de compra, inversión por empresa y seguimiento de adquisiciones.', footer:'Compras - Inversión - Por entidad' },
   permisos:    { url:'/permisos', icono:'\u{1F514}', titulo:'Permisos y Notificaciones', desc:'Gestiona permisos de acceso por usuario y grupo, notificaciones y alertas.', footer:'Permisos - Grupos - Usuarios' },
 };
 
@@ -105,7 +105,7 @@ function getEstado(m) { return (modulos && modulos[m]) || 'deshabilitado'; }
 function getBadge(estado) {
   if (estado === 'activo') return { cls: 'badge-active', label: 'Activo' };
   if (estado === 'pruebas') return { cls: 'badge-beta', label: 'En Pruebas' };
-  return { cls: 'badge-disabled', label: 'Proximamente' };
+  return { cls: 'badge-disabled', label: 'Próximamente' };
 }
 
 const grActivo = {}, grPruebas = {}, grDeshabilitado = {};
@@ -140,7 +140,7 @@ function renderCards(grupo, estado) {
 %>
 
 <% if (Object.keys(grActivo).length) { %>
-  <div class="section-label">Modulos disponibles</div>
+  <div class="section-label">Módulos disponibles</div>
   <div class="modules-grid"><%- renderCards(grActivo, 'activo') %></div>
 <% } %>
 
@@ -150,7 +150,7 @@ function renderCards(grupo, estado) {
 <% } %>
 
 <% if (Object.keys(grDeshabilitado).length) { %>
-  <div class="section-label">Proximamente</div>
+  <div class="section-label">Próximamente</div>
   <div class="modules-grid"><%- renderCards(grDeshabilitado, 'deshabilitado') %></div>
 <% } %>
 </div>
@@ -172,7 +172,7 @@ function tiempoRelativo(fecha) {
   if (diff < 3600) return 'hace ' + Math.floor(diff/60) + ' min';
   if (diff < 86400) return 'hace ' + Math.floor(diff/3600) + ' hora' + (Math.floor(diff/3600)>1?'s':'');
   const dias = Math.floor(diff/86400);
-  return 'hace ' + dias + ' dia' + (dias>1?'s':'');
+  return 'hace ' + dias + ' día' + (dias>1?'s':'');
 }
 
 async function cargarNotificaciones() {
@@ -211,7 +211,7 @@ async function cargarNotificaciones() {
           notifItems.push({
             icon: '&bull;',
             titulo: 'Solicitud en espera',
-            desc: a.numero + ' - Esperando autorizacion de TI',
+            desc: a.numero + ' - Esperando autorización de TI',
             tiempo: tiempoRelativo(a.created_at),
             url: '/reportes',
           });
@@ -255,7 +255,7 @@ async function cargarNotificaciones() {
     ).join('');
     // Banner
     document.getElementById('notif-pendientes').style.display = 'block';
-    document.getElementById('notif-texto').textContent = total + ' notificacion' + (total>1?'es':'') + ' pendiente' + (total>1?'s':'');
+    document.getElementById('notif-texto').textContent = total + ' ' + (total>1?'notificaciones pendientes':'notificación pendiente');
   } else {
     badge.style.display = 'none';
     body.innerHTML = '<div class="notif-empty">No tienes notificaciones pendientes.</div>';

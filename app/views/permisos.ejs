@@ -129,7 +129,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
     <div class="sub">Permisos y Notificaciones</div>
   </div>
-  <a href="/" class="btn-back">&larr; Menu</a>
+  <a href="/" class="btn-back">&larr; Menú</a>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
     <a href="/logout" style="padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;">Salir</a>
@@ -141,17 +141,17 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <% } else if (nivelInfo.nivel === 2) { %>
     <span class="nivel-badge nivel-2">N2 - TI</span>
   <% } else { %>
-    <span class="nivel-badge nivel-3">N3 - Jefe de Area: <%= nivelInfo.grupo_nombre || '' %></span>
+    <span class="nivel-badge nivel-3">N3 - Jefe de Área: <%= nivelInfo.grupo_nombre || '' %></span>
   <% } %>
 
   <!-- Tabs -->
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('arbol')">&#127795; Jerarquia</div>
+    <div class="tab active" onclick="switchTab('arbol')">&#127795; Jerarquía</div>
     <% if (nivelInfo.nivel <= 2) { %>
-    <div class="tab" onclick="switchTab('modulos')">&#128274; Permisos de Modulos</div>
+    <div class="tab" onclick="switchTab('modulos')">&#128274; Permisos de Módulos</div>
     <% } %>
     <% if (nivelInfo.nivel <= 2) { %>
-    <div class="tab" onclick="switchTab('configuracion')">&#9881; Configuracion</div>
+    <div class="tab" onclick="switchTab('configuracion')">&#9881; Configuración</div>
     <% } %>
     <div class="tab" onclick="switchTab('notificaciones')">&#128276; Notificaciones</div>
   </div>
@@ -217,11 +217,11 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
   <!-- Tab: Notificaciones -->
   <div class="tab-content" id="tab-notificaciones">
-    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Define como se notifica a los usuarios sobre actas pendientes.</p>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Define cómo se notifica a los usuarios sobre actas pendientes.</p>
     <div class="notif-card">
       <div style="display:flex;align-items:center;">
         <span class="notif-icon">&#128227;</span>
-        <div class="notif-info"><div class="notif-label">Notificacion en Dashboard</div><div class="notif-desc">Muestra alerta de actas pendientes al iniciar sesion</div></div>
+        <div class="notif-info"><div class="notif-label">Notificación en Dashboard</div><div class="notif-desc">Muestra alerta de actas pendientes al iniciar sesión</div></div>
       </div>
       <span class="notif-status" style="background:rgba(40,167,69,0.12);color:#1e7e34;">Activo</span>
     </div>
@@ -235,16 +235,16 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <div class="notif-card" style="opacity:0.5;">
       <div style="display:flex;align-items:center;">
         <span class="notif-icon">&#128231;</span>
-        <div class="notif-info"><div class="notif-label">Notificacion por correo</div><div class="notif-desc">Envia email cuando hay actas pendientes de firma</div></div>
+        <div class="notif-info"><div class="notif-label">Notificación por correo</div><div class="notif-desc">Envía email cuando hay actas pendientes de firma</div></div>
       </div>
-      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Proximamente</span>
+      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Próximamente</span>
     </div>
     <div class="notif-card" style="opacity:0.5;">
       <div style="display:flex;align-items:center;">
         <span class="notif-icon">&#9200;</span>
-        <div class="notif-info"><div class="notif-label">Recordatorio automatico</div><div class="notif-desc">Notifica automaticamente despues de X dias sin firmar</div></div>
+        <div class="notif-info"><div class="notif-label">Recordatorio automático</div><div class="notif-desc">Notifica automáticamente después de X días sin firmar</div></div>
       </div>
-      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Proximamente</span>
+      <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Próximamente</span>
     </div>
   </div>
 </div>
@@ -279,7 +279,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <h3 id="ti-privs-titulo">Privilegios de TI</h3>
     <div style="font-size:13px;color:var(--text-main);margin-bottom:16px;">Configurar acceso para <strong id="ti-privs-nombre"></strong></div>
     <div class="perm-row" style="padding:10px 0;">
-      <span class="perm-label">Acceso al panel de administracion</span>
+      <span class="perm-label">Acceso al panel de administración</span>
       <div class="sw-mini"><input type="checkbox" id="ti-priv-admin"><div class="track"></div><div class="knob"></div></div>
     </div>
     <div class="perm-row" style="padding:10px 0;">
@@ -334,7 +334,7 @@ function renderArbol() {
     // Campo nombre del area (solo N1)
     if (NIVEL === 1) {
       html += '<div class="card" style="margin-bottom:12px;">';
-      html += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Nombre del Area</div>';
+      html += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Nombre del Área</div>';
       html += '<div style="display:flex;gap:8px;align-items:center;">';
       html += '<input type="text" id="input-nombre-area" value="' + (TI_NOMBRE_AREA || '').replace(/"/g,'&quot;') + '" placeholder="Ej: Departamento de Sistemas" style="flex:1;padding:8px 12px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:12px;outline:none;">';
       html += '<button class="btn btn-primary btn-sm" onclick="guardarNombreArea()">Guardar</button>';
@@ -370,12 +370,12 @@ function renderArbol() {
 
   // Seccion Grupos
   html += '<div class="section">';
-  html += '<div class="section-title"><span style="font-size:16px;">&#128101;</span> Grupos y Areas (Nivel 3 y 4)</div>';
+  html += '<div class="section-title"><span style="font-size:16px;">&#128101;</span> Grupos y Áreas (Nivel 3 y 4)</div>';
 
   const grupos = arbol.grupos || {};
   if (Object.keys(grupos).length === 0) {
     if (NIVEL <= 2) {
-      html += '<div class="card"><div class="empty">No hay grupos creados. Crea un grupo para organizar usuarios por area.</div></div>';
+      html += '<div class="card"><div class="empty">No hay grupos creados. Crea un grupo para organizar usuarios por área.</div></div>';
     } else {
       html += '<div class="card"><div class="empty">No tienes un grupo asignado.</div></div>';
     }
@@ -445,7 +445,7 @@ function renderGrupo(gid, grupo) {
 
   // Jefes (multiples)
   h += '<div style="margin-bottom:12px;">';
-  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Jefes de Area (N3)</div>';
+  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Jefes de Área (N3)</div>';
   if (jefes.length === 0) {
     h += '<div style="padding:8px;text-align:center;color:var(--text-muted);font-size:12px;">Sin jefes asignados</div>';
   } else {
@@ -453,11 +453,11 @@ function renderGrupo(gid, grupo) {
       h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#129489;&#8205;&#128188;</span>';
       h += '<div><div class="name">' + (j.nombre || j.username) + '</div><div class="detail">' + j.username + '</div></div>';
       h += '</div><div style="display:flex;align-items:center;gap:6px;"><span class="badge badge-jefe">N3</span>';
-      h += '<button class="btn btn-danger btn-sm" onclick="quitarJefe(\'' + gid + '\',\'' + j.username + '\',\'' + (j.nombre || j.username).replace(/'/g, "\\'") + '\')">Quitar</button>';
+      if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarJefe(\'' + gid + '\',\'' + j.username + '\',\'' + (j.nombre || j.username).replace(/'/g, "\\'") + '\')">Quitar</button>';
       h += '</div></div>';
     }
   }
-  h += '<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="abrirBuscar(\'jefe\',\'' + gid + '\')">+ Agregar jefe</button>';
+  if (NIVEL <= 2) h += '<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="abrirBuscar(\'jefe\',\'' + gid + '\')">+ Agregar jefe</button>';
   h += '</div>';
 
   // Miembros
@@ -473,11 +473,11 @@ function renderGrupo(gid, grupo) {
       h += '</div>';
       h += '<div style="display:flex;align-items:center;gap:6px;">';
       h += '<span class="badge badge-user">N4</span>';
-      h += '<button class="btn btn-danger btn-sm" onclick="quitarMiembro(\'' + gid + '\',\'' + mUser + '\',\'' + mNombre.replace(/'/g, "\\'") + '\')">Quitar</button>';
+      if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarMiembro(\'' + gid + '\',\'' + mUser + '\',\'' + mNombre.replace(/'/g, "\\'") + '\')">Quitar</button>';
       h += '</div></div>';
     }
   }
-  h += '<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="abrirBuscar(\'miembro\',\'' + gid + '\')">+ Agregar usuario</button>';
+  if (NIVEL <= 2) h += '<button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="abrirBuscar(\'miembro\',\'' + gid + '\')">+ Agregar usuario</button>';
 
 
   h += '</div></div>';
@@ -528,7 +528,7 @@ function eliminarGrupo(gid, nombre) {
 // Buscar usuarios
 function abrirBuscar(tipo, grupoId) {
   buscarContexto = { tipo, grupo_id: grupoId || '' };
-  const titulos = { ti: 'Agregar Usuario TI', jefe: 'Asignar Jefe de Area', miembro: 'Agregar Usuario al Grupo' };
+  const titulos = { ti: 'Agregar Usuario TI', jefe: 'Asignar Jefe de Área', miembro: 'Agregar Usuario al Grupo' };
   document.getElementById('modal-buscar-titulo').textContent = titulos[tipo] || 'Buscar Usuario';
   document.getElementById('input-buscar-user').value = '';
   document.getElementById('resultados-buscar').innerHTML = '';
@@ -639,7 +639,7 @@ async function guardarNombreArea() {
     body: JSON.stringify({ nombre_area: nombre }),
   });
   const data = await res.json();
-  if (data.ok) toast('Nombre del area guardado');
+  if (data.ok) toast('Nombre del área guardado');
 }
 
 function eliminarTI(username, nombre) {
@@ -714,7 +714,7 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   const tabs = document.querySelectorAll('.tab');
-  const nombres = { arbol: 'Jerarquia', modulos: 'Modulos', configuracion: 'Configuracion', notificaciones: 'Notificaciones' };
+  const nombres = { arbol: 'Jerarquía', modulos: 'Módulos', configuracion: 'Configuración', notificaciones: 'Notificaciones' };
   tabs.forEach(t => { if (t.textContent.includes(nombres[tab] || '')) t.classList.add('active'); });
   if (tab === 'modulos' && !todosUsuarios.length) cargarTablaUsuarios();
   if (tab === 'configuracion') cargarMotivos();

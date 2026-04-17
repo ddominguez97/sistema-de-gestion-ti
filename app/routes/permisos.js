@@ -234,10 +234,8 @@ router.post('/api/grupo/eliminar', requireLogin, async (req, res) => {
 // POST /permisos/api/grupo/agregar-jefe
 router.post('/api/grupo/agregar-jefe', requireLogin, async (req, res) => {
   const cfg = loadConfig();
-  const nivelInfo = getNivelUsuario(cfg, req);
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
   const { grupo_id, username, nombre } = req.body;
-  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id !== String(grupo_id)) return res.status(403).json({ error: 'Solo tu grupo' });
-  if (nivelInfo.nivel > 3) return res.status(403).json({ error: 'Sin acceso' });
   if (!grupo_id || !username) return res.status(400).json({ error: 'Datos incompletos' });
   const { recordset } = await query('SELECT id FROM permisos_grupo_jefes WHERE grupo_id=@gid AND username=@user', { gid: parseInt(grupo_id), user: username.toLowerCase() });
   if (!recordset.length) {
@@ -250,10 +248,8 @@ router.post('/api/grupo/agregar-jefe', requireLogin, async (req, res) => {
 // POST /permisos/api/grupo/quitar-jefe
 router.post('/api/grupo/quitar-jefe', requireLogin, async (req, res) => {
   const cfg = loadConfig();
-  const nivelInfo = getNivelUsuario(cfg, req);
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
   const { grupo_id, username } = req.body;
-  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id !== String(grupo_id)) return res.status(403).json({ error: 'Solo tu grupo' });
-  if (nivelInfo.nivel > 3) return res.status(403).json({ error: 'Sin acceso' });
   if (!grupo_id || !username) return res.status(400).json({ error: 'Datos incompletos' });
   await query('DELETE FROM permisos_grupo_jefes WHERE grupo_id=@gid AND username=@user', { gid: parseInt(grupo_id), user: username.toLowerCase() });
   await refreshCache();
@@ -263,11 +259,9 @@ router.post('/api/grupo/quitar-jefe', requireLogin, async (req, res) => {
 // POST /permisos/api/grupo/miembro
 router.post('/api/grupo/miembro', requireLogin, async (req, res) => {
   const cfg = loadConfig();
-  const nivelInfo = getNivelUsuario(cfg, req);
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
   const { grupo_id, username, nombre } = req.body;
   if (!grupo_id || !username) return res.status(400).json({ error: 'Datos incompletos' });
-  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id !== String(grupo_id)) return res.status(403).json({ error: 'Solo tu grupo' });
-  if (nivelInfo.nivel > 3) return res.status(403).json({ error: 'Sin acceso' });
   const { recordset } = await query('SELECT id FROM permisos_grupo_miembros WHERE grupo_id=@gid AND username=@user', { gid: parseInt(grupo_id), user: username.toLowerCase() });
   if (!recordset.length) {
     await query('INSERT INTO permisos_grupo_miembros (grupo_id,username,nombre) VALUES (@gid,@user,@nombre)', { gid: parseInt(grupo_id), user: username.toLowerCase(), nombre: nombre || username });
@@ -279,11 +273,9 @@ router.post('/api/grupo/miembro', requireLogin, async (req, res) => {
 // POST /permisos/api/grupo/quitar-miembro
 router.post('/api/grupo/quitar-miembro', requireLogin, async (req, res) => {
   const cfg = loadConfig();
-  const nivelInfo = getNivelUsuario(cfg, req);
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
   const { grupo_id, username } = req.body;
   if (!grupo_id || !username) return res.status(400).json({ error: 'Datos incompletos' });
-  if (nivelInfo.nivel === 3 && nivelInfo.grupo_id !== String(grupo_id)) return res.status(403).json({ error: 'Solo tu grupo' });
-  if (nivelInfo.nivel > 3) return res.status(403).json({ error: 'Sin acceso' });
   await query('DELETE FROM permisos_grupo_miembros WHERE grupo_id=@gid AND username=@user', { gid: parseInt(grupo_id), user: username.toLowerCase() });
   await refreshCache();
   res.json({ ok: true });

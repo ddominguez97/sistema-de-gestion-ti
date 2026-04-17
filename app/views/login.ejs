@@ -24,7 +24,7 @@ input:focus{border-color:var(--color-principal);}
 <div class="login-card">
   <div class="login-logo">
     <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:60px;object-fit:contain;margin-bottom:8px;">
-    <div class="sub">Sistema de Gestion de Activos TI</div>
+    <div class="sub">Sistema de Gestión de Activos TI</div>
   </div>
   <div class="login-title">Ingresa con tus credenciales</div>
   <% if (error) { %>
@@ -33,8 +33,8 @@ input:focus{border-color:var(--color-principal);}
   <form method="POST" action="/">
     <label>Usuario</label>
     <input type="text" name="username" placeholder="Usuario" autofocus required>
-    <label>Contrasena</label>
-    <input type="password" name="password" placeholder="Contrasena" required>
+    <label>Contraseña</label>
+    <input type="password" name="password" placeholder="Contraseña" required>
     <button class="btn" type="submit">Ingresar</button>
   </form>
 </div>
