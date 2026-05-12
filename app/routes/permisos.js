@@ -3,7 +3,7 @@ const router = express.Router();
 const mysql = require('mysql2/promise');
 const { loadConfig, saveConfig, loadConfigFromDB } = require('../config/config');
 const { query } = require('../config/database');
-const { requireLogin, getNivelUsuario } = require('../middleware/auth');
+const { requireLogin, getNivelUsuario, searchADUsers, resolveADConfig } = require('../middleware/auth');
 
 async function getConn() {
   const cfg = loadConfig();
@@ -125,6 +125,9 @@ router.get('/api/buscar-usuarios', requireLogin, async (req, res) => {
   const q = (req.query.q || '').trim();
   if (q.length < 2) return res.json([]);
   const asignados = getUsuariosAsignados(cfg);
+
+  // Buscar en GLPI
+  let glpiResultados = [];
   let conn;
   try {
     conn = await getConn();
@@ -135,17 +138,33 @@ router.get('/api/buscar-usuarios', requireLogin, async (req, res) => {
        ORDER BY u.realname, u.firstname LIMIT 50`,
       [`%${q}%`, `%${q}%`, `%${q}%`]
     );
-    res.json(rows.slice(0, 25).map(r => {
-      const uname = (r.name || '').toLowerCase();
-      return {
-        username: r.name,
-        nombre: ((r.firstname || '') + ' ' + (r.realname || '')).trim() || r.name,
-        tipo: r.authtype === 1 ? 'GLPI' : r.authtype === 2 ? 'LDAP' : r.authtype === 3 ? 'AD' : 'Otro',
-        asignado: asignados[uname] || null,
-      };
+    console.log(`[buscar] GLPI "${q}": ${rows.length} resultados`);
+    glpiResultados = rows.map(r => ({
+      username: r.name,
+      nombre: ((r.firstname || '') + ' ' + (r.realname || '')).trim() || r.name,
+      tipo: r.authtype === 1 ? 'GLPI' : r.authtype === 2 ? 'LDAP' : r.authtype === 3 ? 'AD' : 'Otro',
+      asignado: asignados[(r.name || '').toLowerCase()] || null,
     }));
-  } catch (e) { res.json([]); }
-  finally { if (conn) await conn.end(); }
+  } catch (e) { console.error(`[buscar] GLPI error:`, e.message); }
+  finally { if (conn) try { await conn.end(); } catch {} }
+
+  // Buscar en AD directo (usuarios que aun no han entrado al sistema)
+  let adResultados = [];
+  try {
+    const adCfg = await resolveADConfig(cfg.active_directory || {});
+    if (adCfg && adCfg.servidor) {
+      const adUsers = await searchADUsers(q, adCfg);
+      console.log(`[buscar] AD "${q}": ${adUsers.length} resultados`, adUsers.map(u => u.username));
+      const glpiUsernames = new Set(glpiResultados.map(r => r.username.toLowerCase()));
+      adResultados = adUsers
+        .filter(u => !glpiUsernames.has(u.username.toLowerCase()))
+        .map(u => ({ ...u, asignado: asignados[u.username.toLowerCase()] || null }));
+    } else {
+      console.warn('[buscar] AD no configurado o sin servidor');
+    }
+  } catch (e) { console.error('Error busqueda AD:', e.message); }
+
+  res.json([...glpiResultados, ...adResultados].slice(0, 25));
 });
 
 // POST /permisos/api/ti/nombre-area
@@ -226,6 +245,10 @@ router.post('/api/grupo/eliminar', requireLogin, async (req, res) => {
   if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
   const { grupo_id } = req.body;
   if (!grupo_id) return res.status(400).json({ error: 'Grupo requerido' });
+  const { recordset: check } = await query('SELECT nombre FROM permisos_grupos WHERE id=@gid', { gid: parseInt(grupo_id) });
+  if (check.length && ['Gerencia', 'Contadora'].includes(check[0].nombre)) {
+    return res.status(403).json({ error: 'Este grupo es del sistema y no puede eliminarse.' });
+  }
   await query('DELETE FROM permisos_grupos WHERE id=@gid', { gid: parseInt(grupo_id) });
   await refreshCache();
   res.json({ ok: true });
@@ -295,6 +318,9 @@ router.post('/api/grupo/permisos', requireLogin, async (req, res) => {
   if (typeof permisos.actas !== 'undefined') { sets.push('perm_actas=@actas'); params.actas = permisos.actas ? 1 : 0; }
   if (typeof permisos.reportes !== 'undefined') { sets.push('perm_reportes=@reportes'); params.reportes = permisos.reportes ? 1 : 0; }
   if (nivelInfo.nivel <= 2 && typeof permisos.crear_entrega !== 'undefined') { sets.push('perm_crear_entrega=@entrega'); params.entrega = permisos.crear_entrega ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.puede_aprobar_cotizacion !== 'undefined') { sets.push('puede_aprobar_cotizacion=@aprobCot'); params.aprobCot = permisos.puede_aprobar_cotizacion ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.puede_aprobar_pago !== 'undefined') { sets.push('puede_aprobar_pago=@aprobPago'); params.aprobPago = permisos.puede_aprobar_pago ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.puede_marcar_pagado !== 'undefined') { sets.push('puede_marcar_pagado=@marcPagado'); params.marcPagado = permisos.puede_marcar_pagado ? 1 : 0; }
   if (sets.length) await query('UPDATE permisos_grupos SET ' + sets.join(',') + ', updated_at=GETDATE() WHERE id=@gid', params);
   await refreshCache();
   res.json({ ok: true });

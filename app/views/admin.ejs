@@ -218,6 +218,9 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
           <div class="fg"><label>Dominio</label><input type="text" name="ad_dominio" value="<%= ad.dominio || '' %>"></div>
           <div class="fg"><label>Base DN</label><input type="text" name="ad_base_dn" value="<%= ad.base_dn || '' %>"></div>
           <div class="fg"><label>Sufijo usuario (opcional)</label><input type="text" name="ad_sufijo" value="<%= ad.sufijo_usuario || '' %>"></div>
+          <div class="fg"><label>Cuenta de servicio (DN)</label><input type="text" name="ad_bind_dn" value="<%= ad.bind_dn || '' %>" placeholder="CN=glpi,OU=Servicios,DC=nagsa,DC=com"></div>
+          <div class="fg"><label>Contraseña cuenta de servicio</label><input type="password" name="ad_bind_password" value="<%= ad.bind_password || '' %>"></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:-8px;margin-bottom:8px;">Cuenta de solo lectura usada para buscar usuarios en el directorio.</div>
         </div>
       </div>
       <div class="cf"><button type="submit" class="bs">Guardar</button></div>

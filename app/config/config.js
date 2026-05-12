@@ -65,12 +65,10 @@ async function loadPermisosFromDB() {
   }
 
   // Grupos
-  const { recordset: grupoRows } = await query('SELECT id, nombre, perm_actas, perm_reportes, perm_crear_entrega FROM permisos_grupos');
+  const { recordset: grupoRows } = await query('SELECT id, nombre, perm_actas, perm_reportes, perm_crear_entrega, puede_aprobar_cotizacion, puede_aprobar_pago, puede_marcar_pagado FROM permisos_grupos');
   for (const g of grupoRows) {
     const gid = String(g.id);
-    // Jefes
     const { recordset: jefes } = await query('SELECT username, nombre FROM permisos_grupo_jefes WHERE grupo_id=@gid', { gid: g.id });
-    // Miembros
     const { recordset: miembros } = await query('SELECT username, nombre FROM permisos_grupo_miembros WHERE grupo_id=@gid', { gid: g.id });
 
     pc.grupos[gid] = {
@@ -78,6 +76,11 @@ async function loadPermisosFromDB() {
       jefes: jefes.map(j => ({ username: j.username, nombre: j.nombre })),
       miembros: miembros.map(m => ({ username: m.username, nombre: m.nombre })),
       permisos: { actas: !!g.perm_actas, reportes: !!g.perm_reportes, crear_entrega: !!g.perm_crear_entrega },
+      inversiones: {
+        puede_aprobar_cotizacion: !!g.puede_aprobar_cotizacion,
+        puede_aprobar_pago: !!g.puede_aprobar_pago,
+        puede_marcar_pagado: !!g.puede_marcar_pagado,
+      },
     };
   }
 
@@ -158,9 +161,31 @@ async function syncConfigToDB(cfg) {
   }
 }
 
+// Grupos del sistema que deben existir siempre
+const GRUPOS_SISTEMA = [
+  { nombre: 'Gerencia',  puede_aprobar_cotizacion: 1, puede_aprobar_pago: 1, puede_marcar_pagado: 0 },
+  { nombre: 'Contadora', puede_aprobar_cotizacion: 0, puede_aprobar_pago: 0, puede_marcar_pagado: 1 },
+];
+
+async function seedInversionesGroups() {
+  for (const g of GRUPOS_SISTEMA) {
+    const { recordset } = await query('SELECT id FROM permisos_grupos WHERE nombre=@nombre', { nombre: g.nombre });
+    if (!recordset.length) {
+      await query(
+        `INSERT INTO permisos_grupos (nombre, puede_aprobar_cotizacion, puede_aprobar_pago, puede_marcar_pagado)
+         VALUES (@nombre, @aprobCot, @aprobPago, @marcPagado)`,
+        { nombre: g.nombre, aprobCot: g.puede_aprobar_cotizacion, aprobPago: g.puede_aprobar_pago, marcPagado: g.puede_marcar_pagado }
+      );
+      console.log(`Grupo sistema "${g.nombre}" creado automaticamente.`);
+    }
+  }
+}
+
 // Inicializar cache desde SQL al arrancar
 async function initConfig() {
   try {
+    await loadConfigFromDB();
+    await seedInversionesGroups();
     await loadConfigFromDB();
     console.log('Config cargada desde SQL Server.');
   } catch (e) {

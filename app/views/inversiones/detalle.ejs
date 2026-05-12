@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solicitud #<%= inv.id %> &mdash; <%= branding.nombre %></title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
+.topbar{background:var(--bg-card);border-bottom:2px solid var(--color-principal);padding:14px 28px;display:flex;align-items:center;gap:16px;}
+.topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.topbar .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-sub);}
+.topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
+.topbar a.btn-logout{padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;}
+.container{max-width:760px;margin:32px auto;padding:0 20px;}
+.card{background:var(--bg-card);border-radius:10px;padding:28px;border:1px solid var(--border);margin-bottom:20px;}
+.card-title{font-size:14px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--color-principal);margin-bottom:18px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.info-item label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;}
+.info-item .val{font-size:13px;color:var(--text-main);}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-pendiente_cotizacion{background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);}
+.badge-pendiente_aprobacion,.badge-pendiente_aprobacion_cotizacion,.badge-pendiente_aprobacion_pago{background:rgba(0,123,255,0.12);color:#0056b3;border:1px solid rgba(0,123,255,0.3);}
+.badge-en_compra{background:rgba(103,58,183,0.12);color:#673ab7;border:1px solid rgba(103,58,183,0.3);}
+.badge-pendiente_pago{background:rgba(255,193,7,0.15);color:#856404;border:1px solid rgba(255,193,7,0.4);}
+.badge-pagado{background:rgba(40,167,69,0.12);color:#155724;border:1px solid rgba(40,167,69,0.3);}
+.badge-rechazado{background:rgba(220,53,69,0.12);color:#721c24;border:1px solid rgba(220,53,69,0.3);}
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:5px;}
+input,textarea{width:100%;padding:9px 12px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;font-family:inherit;}
+input:focus,textarea:focus{border-color:var(--color-principal);}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.btn{padding:10px 20px;border-radius:7px;border:none;font-size:12px;font-weight:700;cursor:pointer;}
+.btn-success{background:rgba(40,167,69,0.15);color:#155724;border:1px solid rgba(40,167,69,0.4);}
+.btn-success:hover{background:rgba(40,167,69,0.25);}
+.btn-danger{background:rgba(220,53,69,0.1);color:#721c24;border:1px solid rgba(220,53,69,0.3);}
+.btn-danger:hover{background:rgba(220,53,69,0.2);}
+.btn-primary{background:var(--color-principal);color:#fff;border:none;}
+.btn-primary:hover{opacity:0.9;}
+.timeline{list-style:none;padding:0;}
+.timeline li{display:flex;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);}
+.timeline li:last-child{border-bottom:none;}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:var(--color-principal);margin-top:5px;flex-shrink:0;}
+.tl-dot.done{background:#28a745;}
+.tl-dot.pending{background:var(--border2);}
+.tl-dot.rejected{background:#dc3545;}
+.tl-label{font-size:12px;font-weight:700;}
+.tl-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+</style>
+<%- include('../partials/branding') %>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;">
+    <div><div style="font-weight:700;font-size:14px;">Solicitud #<%= inv.id %></div><div class="sub">Inversiones</div></div>
+  </div>
+  <div class="user">
+    <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <a href="/inversiones" class="btn-back">&larr; Volver</a>
+    <a href="/logout" class="btn-logout">Salir</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Info general -->
+  <div class="card">
+    <div class="card-title">Información de la Solicitud</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Estado</label><div class="val"><span class="badge badge-<%= inv.estado %>"><%= inv.estado.replace(/_/g,' ') %></span></div></div>
+      <div class="info-item"><label>Flujo</label><div class="val">Flujo <%= inv.flujo %> &mdash; <%= inv.flujo==='A' ? 'Aprobación doble' : 'Aprobación directa' %></div></div>
+      <div class="info-item"><label>Empresa</label><div class="val"><%= inv.empresa %></div></div>
+      <div class="info-item"><label>Solicitado por</label><div class="val"><%= inv.solicitado_nombre %> (<%= inv.solicitado_por %>)</div></div>
+      <div class="info-item" style="grid-column:span 2"><label>Descripción</label><div class="val"><%= inv.descripcion %></div></div>
+      <% if (inv.justificacion) { %><div class="info-item" style="grid-column:span 2"><label>Justificación</label><div class="val"><%= inv.justificacion %></div></div><% } %>
+      <% if (inv.observaciones) { %><div class="info-item" style="grid-column:span 2"><label>Observaciones</label><div class="val"><%= inv.observaciones %></div></div><% } %>
+    </div>
+  </div>
+
+  <!-- Cotización (si existe) -->
+  <% if (inv.cotizacion_monto) { %>
+  <div class="card">
+    <div class="card-title">Cotización</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Proveedor</label><div class="val"><%= inv.cotizacion_proveedor %></div></div>
+      <div class="info-item"><label>Monto</label><div class="val" style="font-size:18px;font-weight:800;color:var(--color-principal);">$<%= Number(inv.cotizacion_monto).toFixed(2) %></div></div>
+      <% if (inv.cotizacion_detalle) { %><div class="info-item" style="grid-column:span 2"><label>Detalle</label><div class="val"><%= inv.cotizacion_detalle %></div></div><% } %>
+      <div class="info-item"><label>Cotizado por</label><div class="val"><%= inv.cotizado_por %></div></div>
+      <div class="info-item"><label>Fecha cotización</label><div class="val"><%= inv.cotizado_at ? new Date(inv.cotizado_at).toLocaleDateString('es-EC') : '—' %></div></div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Acciones según rol y estado -->
+  <% if (inv.estado === 'rechazado') { %>
+  <div class="card">
+    <div class="card-title" style="color:#dc3545;">Rechazado</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Rechazado por</label><div class="val"><%= inv.rechazado_por %></div></div>
+      <div class="info-item"><label>Fecha</label><div class="val"><%= inv.rechazado_at ? new Date(inv.rechazado_at).toLocaleDateString('es-EC') : '—' %></div></div>
+      <% if (inv.motivo_rechazo) { %><div class="info-item" style="grid-column:span 2"><label>Motivo</label><div class="val"><%= inv.motivo_rechazo %></div></div><% } %>
+    </div>
+  </div>
+  <% } %>
+
+  <% if (inv.estado === 'pagado') { %>
+  <div class="card">
+    <div class="card-title" style="color:#28a745;">Pagado</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Marcado por</label><div class="val"><%= inv.marcado_pagado_por %></div></div>
+      <div class="info-item"><label>Fecha</label><div class="val"><%= inv.marcado_pagado_at ? new Date(inv.marcado_pagado_at).toLocaleDateString('es-EC') : '—' %></div></div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Acciones disponibles -->
+  <%
+    const puedeAccionar =
+      (rolInfo.puede_cotizar && inv.estado === 'pendiente_cotizacion') ||
+      (rolInfo.puede_cotizar && inv.estado === 'en_compra') ||
+      (rolInfo.puede_aprobar_cotizacion && inv.estado === 'pendiente_aprobacion_cotizacion') ||
+      (rolInfo.puede_aprobar_pago && (inv.estado === 'pendiente_aprobacion' || inv.estado === 'pendiente_aprobacion_pago')) ||
+      (rolInfo.puede_marcar_pagado && inv.estado === 'pendiente_pago') ||
+      (['ti','gerente'].includes(rolInfo.rol) && !['rechazado','pagado'].includes(inv.estado));
+  %>
+  <% if (puedeAccionar) { %>
+  <div class="card">
+    <div class="card-title">Acciones</div>
+
+    <!-- TI cotiza -->
+    <% if (rolInfo.puede_cotizar && inv.estado === 'pendiente_cotizacion') { %>
+    <form id="formCotizar">
+      <div class="form-group"><label>Proveedor *</label><input name="proveedor" required placeholder="Nombre del proveedor"></div>
+      <div class="form-group"><label>Monto total *</label><input name="monto" type="number" step="0.01" min="0" required placeholder="0.00"></div>
+      <div class="form-group"><label>Detalle de cotización</label><textarea name="detalle" rows="3" placeholder="Especificaciones, número de cotización, etc."></textarea></div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Registrar Cotización</button>
+        <button type="button" class="btn btn-danger" onclick="rechazar()">Rechazar</button>
+      </div>
+    </form>
+    <% } %>
+
+    <!-- TI marca comprado (Flujo A) -->
+    <% if (rolInfo.puede_cotizar && inv.estado === 'en_compra') { %>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">La cotización fue aprobada por gerencia. Confirma cuando hayas realizado la compra.</p>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="accion('marcar-comprado')">Confirmar Compra Realizada</button>
+      <button type="button" class="btn btn-danger" onclick="rechazar()">Rechazar</button>
+    </div>
+    <% } %>
+
+    <!-- Gerente aprueba cotización (Flujo A) -->
+    <% if (rolInfo.puede_aprobar_cotizacion && inv.estado === 'pendiente_aprobacion_cotizacion') { %>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">TI presentó la cotización. ¿Aprueba para que procedan con la compra?</p>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="accion('aprobar-cotizacion')">Aprobar Cotización</button>
+      <button type="button" class="btn btn-danger" onclick="rechazar()">Rechazar</button>
+    </div>
+    <% } %>
+
+    <!-- Gerente aprueba pago -->
+    <% if (rolInfo.puede_aprobar_pago && (inv.estado === 'pendiente_aprobacion' || inv.estado === 'pendiente_aprobacion_pago')) { %>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">¿Aprueba el pago de esta compra?</p>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="accion('aprobar')">Aprobar Pago</button>
+      <button type="button" class="btn btn-danger" onclick="rechazar()">Rechazar</button>
+    </div>
+    <% } %>
+
+    <!-- Contadora marca pagado -->
+    <% if (rolInfo.puede_marcar_pagado && inv.estado === 'pendiente_pago') { %>
+    <p style="font-size:13px;color:var(--text-sub);margin-bottom:14px;">Gerencia aprobó el pago. Confirma cuando hayas procesado el pago.</p>
+    <div class="btn-row">
+      <button class="btn btn-success" onclick="accion('marcar-pagado')">Marcar como Pagado</button>
+    </div>
+    <% } %>
+
+  </div>
+  <% } %>
+
+</div>
+
+<script>
+const id = <%= inv.id %>;
+
+async function accion(endpoint) {
+  if (!confirm('¿Confirmar acción?')) return;
+  const r = await fetch(`/inversiones/${id}/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  const res = await r.json();
+  if (res.ok) location.reload();
+  else alert(res.error || 'Error');
+}
+
+async function rechazar() {
+  const motivo = prompt('Motivo del rechazo (opcional):');
+  if (motivo === null) return;
+  const r = await fetch(`/inversiones/${id}/rechazar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ motivo }),
+  });
+  const res = await r.json();
+  if (res.ok) location.reload();
+  else alert(res.error || 'Error');
+}
+
+const formCotizar = document.getElementById('formCotizar');
+if (formCotizar) {
+  formCotizar.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(formCotizar));
+    const btn = formCotizar.querySelector('button[type=submit]');
+    btn.disabled = true;
+    const r = await fetch(`/inversiones/${id}/cotizar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const res = await r.json();
+    if (res.ok) location.reload();
+    else { alert(res.error || 'Error'); btn.disabled = false; }
+  });
+}
+</script>
+</body>
+</html>

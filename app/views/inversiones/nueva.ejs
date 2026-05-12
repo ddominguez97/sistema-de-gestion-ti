@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nueva Solicitud &mdash; <%= branding.nombre %></title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
+.topbar{background:var(--bg-card);border-bottom:2px solid var(--color-principal);padding:14px 28px;display:flex;align-items:center;gap:16px;}
+.topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.topbar .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-sub);}
+.topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
+.topbar a.btn-logout{padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;}
+.container{max-width:680px;margin:32px auto;padding:0 20px;}
+.card{background:var(--bg-card);border-radius:10px;padding:32px;border:1px solid var(--border);}
+.card-title{font-size:16px;font-weight:800;margin-bottom:24px;}
+.form-group{margin-bottom:18px;}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:6px;}
+input,textarea,select{width:100%;padding:10px 13px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;transition:border-color 0.15s;font-family:inherit;}
+input:focus,textarea:focus,select:focus{border-color:var(--color-principal);}
+textarea{resize:vertical;min-height:90px;}
+.form-info{background:var(--bg-dark2);border-radius:7px;padding:12px 14px;font-size:12px;color:var(--text-sub);margin-bottom:20px;border:1px solid var(--border);}
+.form-info strong{color:var(--text-main);}
+.btn-row{display:flex;gap:12px;margin-top:8px;}
+.btn-primary{padding:11px 24px;border-radius:7px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-primary:hover{opacity:0.9;}
+.btn-cancel{padding:11px 20px;border-radius:7px;border:1.5px solid var(--border);background:transparent;color:var(--text-sub);font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;text-align:center;}
+</style>
+<%- include('../partials/branding') %>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;">
+    <div><div style="font-weight:700;font-size:14px;">Nueva Solicitud</div><div class="sub">Inversiones</div></div>
+  </div>
+  <div class="user">
+    <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <a href="/inversiones" class="btn-back">&larr; Volver</a>
+    <a href="/logout" class="btn-logout">Salir</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">Solicitud de Compra</div>
+
+    <div class="form-info">
+      <strong>Solicitante:</strong> <%= session.nagsa_name %> &nbsp;|&nbsp;
+      <strong>Empresa:</strong> <%= empresa || 'Sin empresa' %>
+    </div>
+
+    <form id="formNueva">
+      <div class="form-group">
+        <label>Descripción del equipo / artículo *</label>
+        <input type="text" name="descripcion" placeholder="Ej: Laptop Dell Latitude 15, 16GB RAM, 512GB SSD" required>
+      </div>
+      <div class="form-group">
+        <label>Justificación</label>
+        <textarea name="justificacion" placeholder="¿Por qué se necesita esta compra?"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Observaciones</label>
+        <textarea name="observaciones" placeholder="Información adicional, urgencia, especificaciones..." rows="3"></textarea>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn-primary">Enviar Solicitud</button>
+        <a href="/inversiones" class="btn-cancel">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('formNueva').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const data = Object.fromEntries(new FormData(form));
+  const btn = form.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  try {
+    const r = await fetch('/inversiones/nueva', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const res = await r.json();
+    if (res.ok) {
+      window.location.href = '/inversiones';
+    } else {
+      alert(res.error || 'Error al enviar');
+      btn.disabled = false;
+      btn.textContent = 'Enviar Solicitud';
+    }
+  } catch {
+    alert('Error de conexión');
+    btn.disabled = false;
+    btn.textContent = 'Enviar Solicitud';
+  }
+});
+</script>
+</body>
+</html>

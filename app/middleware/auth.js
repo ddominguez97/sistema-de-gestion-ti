@@ -177,36 +177,83 @@ async function loginAD(username, password, adCfg) {
       if (baseDn) {
         client.search(baseDn, {
           filter: `(${loginField}=${username})`,
-          attributes: [realnameField, firstnameField, 'sn', 'displayName', 'givenName'],
+          attributes: [realnameField, firstnameField, 'sn', 'displayName', 'givenName', 'distinguishedName'],
           scope: 'sub',
         }, (searchErr, searchRes) => {
           if (searchErr) {
             client.destroy();
             return resolve({ user: username, name: displayName, firstname: firstName || username, auth: 'ad' });
           }
-          let realName = '', fullDisplayName = '';
+          let realName = '', fullDisplayName = '', dn = '';
           searchRes.on('searchEntry', (entry) => {
+            dn = (entry.dn?.toString() || entry.objectName || '').toString();
             const attrs = entry.pojo ? entry.pojo.attributes : [];
             for (const a of attrs) {
               if (a.type === realnameField && a.values[0]) realName = a.values[0];
               if (a.type === 'displayName' && a.values[0]) fullDisplayName = a.values[0];
               if (a.type === firstnameField && a.values[0]) firstName = a.values[0];
               else if (a.type === 'givenName' && a.values[0] && !firstName) firstName = a.values[0];
+              if (a.type === 'distinguishedName' && a.values[0]) dn = a.values[0];
             }
           });
           searchRes.on('end', () => {
             client.destroy();
-            // Prioridad: displayName completo > nombre+apellido > realname > username
             if (fullDisplayName) displayName = fullDisplayName;
             else if (firstName && realName) displayName = firstName + ' ' + realName;
             else if (realName) displayName = realName;
-            resolve({ user: username, name: displayName, firstname: firstName || displayName, auth: 'ad' });
+            // Extraer empresa del DN (ultimo OU antes de DC)
+            const ous = (dn.match(/OU=([^,]+)/gi) || []).map(o => o.replace(/ou=/i, ''));
+            const empresa = ous.length ? ous[ous.length - 1] : '';
+            resolve({ user: username, name: displayName, firstname: firstName || displayName, auth: 'ad', empresa });
           });
         });
       } else {
         client.destroy();
-        resolve({ user: username, name: displayName, firstname: firstName || username, auth: 'ad' });
+        resolve({ user: username, name: displayName, firstname: firstName || username, auth: 'ad', empresa: '' });
       }
+    });
+  });
+}
+
+async function searchADUsers(q, adCfg) {
+  const ldap = require('ldapjs');
+  return new Promise((resolve) => {
+    const protocol = adCfg.use_tls ? 'ldaps' : 'ldap';
+    const client = ldap.createClient({
+      url: `${protocol}://${adCfg.servidor}:${parseInt(adCfg.puerto) || 389}`,
+      connectTimeout: 5000,
+    });
+    client.on('error', () => resolve([]));
+    const bindDn = adCfg.bind_dn || adCfg.rootdn || '';
+    const bindPass = adCfg.bind_password || adCfg.rootdn_passwd || '';
+    client.bind(bindDn, bindPass, (err) => {
+      if (err) { client.destroy(); return resolve([]); }
+      const loginField = adCfg.login_field || 'sAMAccountName';
+      const filter = `(&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(|(${loginField}=*${q}*)(displayName=*${q}*)(givenName=*${q}*)(sn=*${q}*)))`;
+      const results = [];
+      client.search(adCfg.base_dn || '', {
+        filter,
+        attributes: [loginField, 'displayName', 'givenName', 'sn'],
+        scope: 'sub',
+        sizeLimit: 25,
+      }, (searchErr, searchRes) => {
+        if (searchErr) { client.destroy(); return resolve([]); }
+        searchRes.on('searchEntry', (entry) => {
+          const obj = entry.object || {};
+          const getVal = (key) => { const v = obj[key]; return Array.isArray(v) ? v[0] : (v || ''); };
+          const username = getVal(loginField);
+          const displayName = getVal('displayName');
+          const givenName = getVal('givenName');
+          const sn = getVal('sn');
+          if (username) results.push({
+            username,
+            nombre: displayName || ((givenName + ' ' + sn).trim()) || username,
+            tipo: 'AD',
+          });
+        });
+        searchRes.on('end', () => { client.destroy(); resolve(results); });
+        searchRes.on('error', () => { client.destroy(); resolve(results); });
+      });
     });
   });
 }
@@ -295,6 +342,10 @@ function getPermisosUsuario(cfg, req) {
     const esJefe = jefes.includes(user) || (grupo.jefe || '').toLowerCase() === user;
     if (esJefe || miembros.includes(user)) {
       const gPerms = grupo.permisos || {};
+      const inv = grupo.inversiones || {};
+      if (inv.puede_aprobar_cotizacion || inv.puede_aprobar_pago || inv.puede_marcar_pagado) {
+        return { etiquetas: false, actas: true, reportes: true, permisos: false, inversiones: true };
+      }
       return {
         etiquetas: false, inversiones: false,
         actas: !!gPerms.actas,
@@ -311,4 +362,4 @@ function getPermisosUsuario(cfg, req) {
   };
 }
 
-module.exports = { requireLogin, requireAdmin, loginGLPI, loginAD, checkModulo, getGLPILdapConfig, resolveADConfig, getNivelUsuario, getPermisosUsuario };
+module.exports = { requireLogin, requireAdmin, loginGLPI, loginAD, searchADUsers, checkModulo, getGLPILdapConfig, resolveADConfig, getNivelUsuario, getPermisosUsuario };

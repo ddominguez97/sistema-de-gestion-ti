@@ -232,6 +232,8 @@ router.post('/save-ad', (req, res) => {
     dominio: (req.body.ad_dominio || '').trim(),
     base_dn: (req.body.ad_base_dn || '').trim(),
     sufijo_usuario: (req.body.ad_sufijo || '').trim(),
+    bind_dn: (req.body.ad_bind_dn || '').trim(),
+    bind_password: (req.body.ad_bind_password || '').trim(),
   };
   saveConfig(cfg);
   req.session.admin_msg = modo === 'automatica'

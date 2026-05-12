@@ -67,8 +67,6 @@ app.get('/proximamente', (req, res) => {
   res.render('proximamente', { titulo: nombres[m] || 'Nuevo Modulo' });
 });
 
-app.get('/inversiones', (req, res) => res.redirect('/proximamente?m=inversiones'));
-
 // Routes
 app.use('/', require('./routes/index'));
 app.use('/admin', require('./routes/admin'));
@@ -77,6 +75,7 @@ app.use('/etiquetas/print', require('./routes/etiquetas-print'));
 app.use('/actas', require('./routes/actas'));
 app.use('/reportes', require('./routes/reportes'));
 app.use('/permisos', require('./routes/permisos'));
+app.use('/inversiones', require('./routes/inversiones'));
 
 // Inicializar config desde SQL Server y arrancar
 const { initConfig } = require('./config/config');

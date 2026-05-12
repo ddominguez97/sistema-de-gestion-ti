@@ -59,6 +59,7 @@ router.post('/', async (req, res) => {
   req.session.nagsa_name = result.name;
   req.session.nagsa_firstname = result.firstname || result.name;
   req.session.nagsa_auth = result.auth;
+  req.session.nagsa_empresa = result.empresa || '';
   req.session.last_activity = Date.now();
   res.redirect('/');
 });

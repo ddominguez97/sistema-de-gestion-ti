@@ -368,21 +368,31 @@ function renderArbol() {
     html += '</div>';
   }
 
-  // Seccion Grupos
+  // Seccion Grupos del sistema (Inversiones)
+  const grupos = arbol.grupos || {};
+  const NOMBRES_SISTEMA = ['Gerencia', 'Contadora'];
+  const gruposSistema = Object.entries(grupos).filter(([, g]) => NOMBRES_SISTEMA.includes(g.nombre));
+  const gruposArea    = Object.entries(grupos).filter(([, g]) => !NOMBRES_SISTEMA.includes(g.nombre));
+
+  if (NIVEL <= 2 && gruposSistema.length) {
+    html += '<div class="section">';
+    html += '<div class="section-title"><span style="font-size:16px;">&#128200;</span> Módulo Inversiones</div>';
+    for (const [gid, grupo] of gruposSistema) html += renderGrupo(gid, grupo);
+    html += '</div>';
+  }
+
+  // Seccion Grupos de área
   html += '<div class="section">';
   html += '<div class="section-title"><span style="font-size:16px;">&#128101;</span> Grupos y Áreas (Nivel 3 y 4)</div>';
 
-  const grupos = arbol.grupos || {};
-  if (Object.keys(grupos).length === 0) {
+  if (gruposArea.length === 0) {
     if (NIVEL <= 2) {
       html += '<div class="card"><div class="empty">No hay grupos creados. Crea un grupo para organizar usuarios por área.</div></div>';
     } else {
       html += '<div class="card"><div class="empty">No tienes un grupo asignado.</div></div>';
     }
   } else {
-    for (const [gid, grupo] of Object.entries(grupos)) {
-      html += renderGrupo(gid, grupo);
-    }
+    for (const [gid, grupo] of gruposArea) html += renderGrupo(gid, grupo);
   }
 
   if (NIVEL <= 2) {
@@ -400,6 +410,7 @@ function renderArbol() {
 
 function renderGrupo(gid, grupo) {
   const miembros = (grupo.miembros || []);
+  const esGrupoSistema = ['Gerencia', 'Contadora'].includes(grupo.nombre);
   let h = '<div class="grupo-card" id="grupo-' + gid + '">';
 
   // Header
@@ -414,14 +425,16 @@ function renderGrupo(gid, grupo) {
   const jefes = grupo.jefes || [];
   // Compatibilidad formato viejo
   if (!jefes.length && grupo.jefe) jefes.push({ username: grupo.jefe, nombre: grupo.jefe_nombre || grupo.jefe });
-  if (jefes.length) {
-    h += '<span class="badge badge-jefe">' + jefes.length + ' jefe' + (jefes.length > 1 ? 's' : '') + '</span>';
-  } else {
-    h += '<span class="badge badge-off">Sin jefe</span>';
+  if (!esGrupoSistema) {
+    if (jefes.length) {
+      h += '<span class="badge badge-jefe">' + jefes.length + ' jefe' + (jefes.length > 1 ? 's' : '') + '</span>';
+    } else {
+      h += '<span class="badge badge-off">Sin jefe</span>';
+    }
   }
   if (NIVEL <= 2) {
     h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editarNombreGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Editar nombre">&#9998;</button>';
-    h += '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Eliminar grupo">&#128465;</button>';
+    if (!esGrupoSistema) h += '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Eliminar grupo">&#128465;</button>';
   }
   h += '<span style="font-size:14px;color:var(--text-muted);transition:transform 0.2s;" id="arrow-' + gid + '">&#9660;</span>';
   h += '</div></div>';
@@ -429,39 +442,63 @@ function renderGrupo(gid, grupo) {
   // Body
   h += '<div class="grupo-body" id="gbody-' + gid + '">';
 
-  // Permisos del grupo
-  h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-input);border:1px solid var(--border);">';
-  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:10px;">Permisos del grupo</div>';
-  const gp = grupo.permisos || {};
-  h += '<div class="perm-row"><span class="perm-label">&#x1F4CB; Actas</span>';
-  h += '<div class="sw-mini"><input type="checkbox" ' + (gp.actas ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'actas\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
-  h += '<div class="perm-row"><span class="perm-label">&#x1F4CA; Reportes</span>';
-  h += '<div class="sw-mini"><input type="checkbox" ' + (gp.reportes ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'reportes\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
-  if (NIVEL <= 2) {
-    h += '<div class="perm-row"><span class="perm-label">&#x1F4DD; Crear acta de entrega <span style="font-size:10px;color:var(--text-muted);">(solo jefe N3)</span></span>';
-    h += '<div class="sw-mini"><input type="checkbox" ' + (gp.crear_entrega ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'crear_entrega\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+  // Permisos del grupo (solo para grupos de area, no del sistema)
+  if (!esGrupoSistema) {
+    h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:var(--bg-input);border:1px solid var(--border);">';
+    h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:10px;">Permisos del grupo</div>';
+    const gp = grupo.permisos || {};
+    h += '<div class="perm-row"><span class="perm-label">&#x1F4CB; Actas</span>';
+    h += '<div class="sw-mini"><input type="checkbox" ' + (gp.actas ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'actas\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+    h += '<div class="perm-row"><span class="perm-label">&#x1F4CA; Reportes</span>';
+    h += '<div class="sw-mini"><input type="checkbox" ' + (gp.reportes ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'reportes\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+    if (NIVEL <= 2) {
+      h += '<div class="perm-row"><span class="perm-label">&#x1F4DD; Crear acta de entrega <span style="font-size:10px;color:var(--text-muted);">(solo jefe N3)</span></span>';
+      h += '<div class="sw-mini"><input type="checkbox" ' + (gp.crear_entrega ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'crear_entrega\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+    }
+    h += '</div>';
   }
-  h += '</div>';
 
-  // Jefes (multiples)
-  h += '<div style="margin-bottom:12px;">';
-  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Jefes de Área (N3)</div>';
-  if (jefes.length === 0) {
-    h += '<div style="padding:8px;text-align:center;color:var(--text-muted);font-size:12px;">Sin jefes asignados</div>';
-  } else {
-    for (const j of jefes) {
-      h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#129489;&#8205;&#128188;</span>';
-      h += '<div><div class="name">' + (j.nombre || j.username) + '</div><div class="detail">' + j.username + '</div></div>';
-      h += '</div><div style="display:flex;align-items:center;gap:6px;"><span class="badge badge-jefe">N3</span>';
-      if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarJefe(\'' + gid + '\',\'' + j.username + '\',\'' + (j.nombre || j.username).replace(/'/g, "\\'") + '\')">Quitar</button>';
-      h += '</div></div>';
+  if (NIVEL <= 2) {
+    const gi = grupo.inversiones || {};
+    const tieneInversiones = gi.puede_aprobar_cotizacion || gi.puede_aprobar_pago || gi.puede_marcar_pagado;
+    if (tieneInversiones) {
+      h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);">';
+      h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--color-principal);margin-bottom:10px;">&#128200; Módulo Inversiones</div>';
+      h += '<div class="perm-row"><span class="perm-label">Aprobar cotización</span>';
+      h += '<div class="sw-mini"><input type="checkbox" ' + (gi.puede_aprobar_cotizacion ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'puede_aprobar_cotizacion\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+      h += '<div class="perm-row"><span class="perm-label">Aprobar pago</span>';
+      h += '<div class="sw-mini"><input type="checkbox" ' + (gi.puede_aprobar_pago ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'puede_aprobar_pago\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+      h += '<div class="perm-row"><span class="perm-label">Marcar como pagado <span style="font-size:10px;color:var(--text-muted);">(contadora)</span></span>';
+      h += '<div class="sw-mini"><input type="checkbox" ' + (gi.puede_marcar_pagado ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'puede_marcar_pagado\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+      h += '</div>';
+    } else {
+      h += '<div style="margin-bottom:12px;"><button onclick="habilitarInversiones(\'' + gid + '\')" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;">+ Asignar rol de Inversiones</button></div>';
     }
   }
-  if (NIVEL <= 2) h += '<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="abrirBuscar(\'jefe\',\'' + gid + '\')">+ Agregar jefe</button>';
-  h += '</div>';
+
+  // Jefes (solo grupos de area, no grupos del sistema)
+  if (!esGrupoSistema) {
+    h += '<div style="margin-bottom:12px;">';
+    h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Jefes de Área (N3)</div>';
+    if (jefes.length === 0) {
+      h += '<div style="padding:8px;text-align:center;color:var(--text-muted);font-size:12px;">Sin jefes asignados</div>';
+    } else {
+      for (const j of jefes) {
+        h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#129489;&#8205;&#128188;</span>';
+        h += '<div><div class="name">' + (j.nombre || j.username) + '</div><div class="detail">' + j.username + '</div></div>';
+        h += '</div><div style="display:flex;align-items:center;gap:6px;"><span class="badge badge-jefe">N3</span>';
+        if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarJefe(\'' + gid + '\',\'' + j.username + '\',\'' + (j.nombre || j.username).replace(/'/g, "\\'") + '\')">Quitar</button>';
+        h += '</div></div>';
+      }
+    }
+    if (NIVEL <= 2) h += '<button class="btn btn-ghost btn-sm" style="margin-top:6px;" onclick="abrirBuscar(\'jefe\',\'' + gid + '\')">+ Agregar jefe</button>';
+    h += '</div>';
+  }
 
   // Miembros
-  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">Usuarios (N4)</div>';
+  const labelMiembro = esGrupoSistema ? grupo.nombre : 'N4';
+  const tituloMiembros = esGrupoSistema ? grupo.nombre + 's' : 'Usuarios (N4)';
+  h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:8px;">' + tituloMiembros + '</div>';
   if (miembros.length === 0) {
     h += '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">Sin miembros</div>';
   } else {
@@ -472,7 +509,7 @@ function renderGrupo(gid, grupo) {
       h += '<div><div class="name">' + mNombre + '</div><div class="detail">' + mUser + '</div></div>';
       h += '</div>';
       h += '<div style="display:flex;align-items:center;gap:6px;">';
-      h += '<span class="badge badge-user">N4</span>';
+      h += '<span class="badge badge-user">' + labelMiembro + '</span>';
       if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarMiembro(\'' + gid + '\',\'' + mUser + '\',\'' + mNombre.replace(/'/g, "\\'") + '\')">Quitar</button>';
       h += '</div></div>';
     }
@@ -706,6 +743,15 @@ async function cambiarPermGrupo(gid, perm, valor) {
     body: JSON.stringify({ grupo_id: gid, permisos }),
   });
   toast('Permiso actualizado');
+  cargarArbol();
+}
+
+async function habilitarInversiones(gid) {
+  await fetch('/permisos/api/grupo/permisos', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grupo_id: gid, permisos: { puede_aprobar_cotizacion: true } }),
+  });
+  cargarArbol();
 }
 
 // Tabs
