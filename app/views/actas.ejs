@@ -100,6 +100,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   <a href="/" class="btn-back">&larr; Menú</a>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
     <a href="/logout" class="btn-logout">Salir</a>
   </div>
 </div>
@@ -223,7 +224,7 @@ cargarMotivos();
   </div></div>
   <div class="card"><div class="section-title">Equipos</div>
     <div class="equipo-row"><div class="search-wrap"><span class="search-icon">&#128269;</span><input type="text" id="equipo-search" placeholder="Buscar equipo por nombre en GLPI..." oninput="buscarEquipo(this.value)" autocomplete="off"><div class="search-results" id="search-results"></div></div><button class="btn-manual" onclick="abrirModalManual()">&#9998; Ingresar manual</button></div>
-    <div id="equipos-container"><div class="empty-equipos" id="empty-msg">&#128230; No hay equipos agregados.</div><table class="equipos-table" id="equipos-table" style="display:none;"><thead><tr><th>#</th><th>Nombre</th><th>Tipo</th><th>Fabricante / Modelo</th><th>S/N</th><th></th></tr></thead><tbody id="equipos-tbody"></tbody></table></div>
+    <div id="equipos-container"><div class="empty-equipos" id="empty-msg">&#128230; No hay equipos agregados.</div><table class="equipos-table" id="equipos-table" style="display:none;"><thead><tr><th>#</th><th>Nombre</th><th>Tipo</th><th>Fabricante / Modelo</th><th>S/N</th><th>Estado</th><th></th></tr></thead><tbody id="equipos-tbody"></tbody></table></div>
   </div>
   <div class="card"><div class="section-title">Datos del Acta</div>
     <div class="form-grid" style="margin-top:0;"><div class="form-group"><label>Fecha</label><input type="date" id="acta-fecha"></div><div class="form-group"><label>Lugar</label><select id="acta-lugar"><option>Guayaquil</option></select></div></div>
@@ -276,12 +277,12 @@ document.getElementById('acta-fecha').value=new Date().toISOString().split('T')[
 async function cargarEstados(){
   try{
     const data=await fetch('/actas/api/estados').then(r=>r.json());
-    // Select de estado en modal manual
     const selM=document.getElementById('m-estado');
-    data.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=e.name;selM.appendChild(o);});
-    // Motivos de salida
     const selMot=document.getElementById('acta-motivo');
-    data.forEach(e=>{const o=document.createElement('option');o.value=e.name;o.textContent=e.name;selMot.appendChild(o);});
+    data.forEach(e=>{
+      const o1=document.createElement('option');o1.value=e.id;o1.textContent=e.name;selM.appendChild(o1);
+      const o2=document.createElement('option');o2.value=e.name;o2.textContent=e.name;selMot.appendChild(o2);
+    });
   }catch(e){}
 }
 async function cargarUbicaciones(){try{const data=await fetch('/actas/api/ubicaciones').then(r=>r.json());const selL=document.getElementById('acta-lugar');selL.innerHTML='';data.forEach(u=>{const o=document.createElement('option');o.value=u.completename;o.textContent=u.completename;if(u.name==='Duran'||u.completename==='Duran')o.selected=true;selL.appendChild(o);});}catch(e){}}
@@ -289,11 +290,11 @@ cargarEstados();cargarUbicaciones();
 
 function setTipo(t){tipoActa=t;document.getElementById('btn-entrega').classList.toggle('active',t==='entrega');document.getElementById('btn-salida').classList.toggle('active',t==='salida');document.getElementById('campos-entrega').style.display='block';document.getElementById('campos-salida').style.display=t==='salida'?'block':'none';document.getElementById('destino-planta-wrap').style.display=t==='entrega'?'block':'none';if(t==='salida')document.getElementById('acta-destino-chk').checked=false;}
 
-function renderEquipos(){const tbody=document.getElementById('equipos-tbody');const table=document.getElementById('equipos-table');const empty=document.getElementById('empty-msg');if(!equipos.length){table.style.display='none';empty.style.display='block';return;}empty.style.display='none';table.style.display='table';tbody.innerHTML=equipos.map((eq,i)=>{const sinSerie=!eq.serie||eq.serie==='---';const snCell=sinSerie?`<input type="text" value="" placeholder="S/N opcional" onchange="equipos[${i}].serie=this.value||'---'" style="width:100px;padding:3px 6px;border-radius:4px;border:1px solid var(--border2);background:var(--bg-input);color:var(--text-main);font-size:11px;">`:eq.serie;return `<tr><td><span class="eq-badge">${i+1}</span></td><td><strong>${eq.nombre}</strong></td><td><span class="eq-badge">${eq.tipo||'---'}</span></td><td>${eq.fabricante||'---'}<br><small style="color:var(--text-muted)">${eq.modelo||'---'}</small></td><td>${snCell}</td><td><button class="btn-remove" onclick="quitarEquipo(${i})">&#10005;</button></td></tr>`;}).join('');}
+function renderEquipos(){const tbody=document.getElementById('equipos-tbody');const table=document.getElementById('equipos-table');const empty=document.getElementById('empty-msg');if(!equipos.length){table.style.display='none';empty.style.display='block';return;}empty.style.display='none';table.style.display='table';tbody.innerHTML=equipos.map((eq,i)=>{const sinSerie=!eq.serie||eq.serie==='---';const snCell=sinSerie?`<input type="text" value="" placeholder="S/N requerido" onchange="equipos[${i}].serie=this.value.trim()||'---'" style="width:110px;padding:3px 6px;border-radius:4px;border:1px solid rgba(220,53,69,0.5);background:var(--bg-input);color:var(--text-main);font-size:11px;">`:eq.serie;return `<tr><td><span class="eq-badge">${i+1}</span></td><td><strong>${eq.nombre}</strong></td><td><span class="eq-badge">${eq.tipo||'---'}</span></td><td>${eq.fabricante||'---'}<br><small style="color:var(--text-muted)">${eq.modelo||'---'}</small></td><td>${snCell}</td><td>${eq.estado||'---'}</td><td><button class="btn-remove" onclick="quitarEquipo(${i})" title="Quitar de la lista" style="font-size:11px;font-weight:700;color:#dc3545;padding:3px 8px;border:1px solid rgba(220,53,69,0.3);border-radius:5px;background:rgba(220,53,69,0.08);">Quitar</button></td></tr>`;}).join('');}
 function quitarEquipo(i){equipos.splice(i,1);renderEquipos();}
 
 function buscarEquipo(q){clearTimeout(searchTimeout);const res=document.getElementById('search-results');if(q.length<2){res.style.display='none';return;}searchTimeout=setTimeout(async()=>{res.innerHTML='<div class="search-result-item no-results">Buscando...</div>';res.style.display='block';try{const data=await fetch('/actas/api/buscar?q='+encodeURIComponent(q)).then(r=>r.json());if(!data.length){res.innerHTML='<div class="search-result-item no-results">No se encontraron equipos</div>';return;}res.innerHTML=data.map(i=>{const sinStock=i.stock!==undefined&&i.stock===0;const stockHTML=i.stock!==undefined?(i.stock>0?'<span style="color:#28a745;font-size:10px;font-weight:700;margin-left:6px;">Stock: '+i.stock+'</span>':'<span style="color:#dc3545;font-size:10px;font-weight:700;margin-left:6px;">Sin stock</span>'):'';return `<div class="search-result-item${sinStock?' no-results':''}" ${sinStock?'':"onclick='agregarDesdeGLPI("+JSON.stringify(i).replace(/'/g,"&#39;")+")'"}><div class="r-name">${i.nombre}<span class="r-tipo">[${i.tipo}]</span>${stockHTML}</div><div class="r-sub">S/N: ${i.serie} | ${i.fabricante}${i.modelo&&i.modelo!=='---'?' | '+i.modelo:''}${i.usuario&&i.usuario!=='---'?' | '+i.usuario:''}</div></div>`;}).join('');}catch(e){res.innerHTML='<div class="search-result-item no-results">Error al buscar</div>';}},300);}
-function agregarDesdeGLPI(item){equipos.push({nombre:item.nombre,tipo:item.tipo,fabricante:item.fabricante,modelo:item.modelo,serie:item.serie,estado:item.estado,usuario:item.usuario});document.getElementById('equipo-search').value='';document.getElementById('search-results').style.display='none';renderEquipos();}
+function agregarDesdeGLPI(item){equipos.push({nombre:item.nombre,tipo:item.tipo,fabricante:item.fabricante,modelo:item.modelo,serie:item.serie,estado:item.estado,usuario:item.usuario,glpi_item_id:item.id||null,glpi_tabla:item.tabla||null});document.getElementById('equipo-search').value='';document.getElementById('search-results').style.display='none';renderEquipos();}
 
 function abrirModalManual(){['m-nombre','m-tipo','m-fabricante','m-modelo','m-serie'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-estado').value='';document.getElementById('modal-manual').classList.add('active');}
 function cerrarModal(){document.getElementById('modal-manual').classList.remove('active');}
@@ -307,6 +308,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))docum
 
 function generarActa(){
   if(!equipos.length){toast('Agrega al menos un equipo','error');return;}
+  const sinSN=equipos.filter(e=>!e.serie||e.serie==='---');
+  if(sinSN.length){toast('Ingresa el S/N de: '+sinSN.map(e=>e.nombre).join(', '),'error');return;}
   const fecha=document.getElementById('acta-fecha').value;
   if(!fecha){toast('Completa la fecha','error');return;}
   const fechaF=new Date(fecha+'T12:00:00').toLocaleDateString('es-EC',{day:'2-digit',month:'long',year:'numeric'});

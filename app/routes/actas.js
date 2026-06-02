@@ -52,11 +52,15 @@ router.get('/api/buscar', requireLogin, async (req, res) => {
         ['%'+q+'%']
       );
       for (const r of rows) {
-        const fab = r.manufacturers_id ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[r.manufacturers_id]))[0][0]?.name || '') : '';
-        const estado = r.states_id ? ((await conn.execute('SELECT name FROM glpi_states WHERE id=? LIMIT 1',[r.states_id]))[0][0]?.name || '') : '';
-        const ubicacion = r.locations_id ? ((await conn.execute('SELECT name FROM glpi_locations WHERE id=? LIMIT 1',[r.locations_id]))[0][0]?.name || '') : '';
-        const usuario = (t.hasUser && r.users_id) ? ((await conn.execute("SELECT CONCAT(firstname,' ',realname) n FROM glpi_users WHERE id=? LIMIT 1",[r.users_id]))[0][0]?.n?.trim() || '') : '---';
-        results.push({ id:r.id, nombre:r.name, serie:r.serial||'---', fabricante:fab, modelo:'', usuario, estado, estado_id:r.states_id, ubicacion, ubicacion_id:r.locations_id, tipo:t.tipo, tabla:t.tabla });
+        const statesId = Number(r.states_id) || 0;
+        const usersId  = Number(r.users_id)  || 0;
+        const mfgId    = Number(r.manufacturers_id) || 0;
+        const locId    = Number(r.locations_id) || 0;
+        const fab    = mfgId    ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[mfgId]))[0][0]?.name || '') : '';
+        const estado = statesId ? ((await conn.execute('SELECT name FROM glpi_states WHERE id=? LIMIT 1',[statesId]))[0][0]?.name || '') : '';
+        const ubicacion = locId ? ((await conn.execute('SELECT name FROM glpi_locations WHERE id=? LIMIT 1',[locId]))[0][0]?.name || '') : '';
+        const usuario = (t.hasUser && usersId) ? ((await conn.execute("SELECT CONCAT(firstname,' ',realname) n FROM glpi_users WHERE id=? LIMIT 1",[usersId]))[0][0]?.n?.trim() || '') : '---';
+        results.push({ id:r.id, nombre:r.name, serie:r.serial||'---', fabricante:fab, modelo:'', usuario, estado, estado_id:statesId, ubicacion, ubicacion_id:locId, tipo:t.tipo, tabla:t.tabla });
       }
     }
     const tiposSimples = [
@@ -140,6 +144,37 @@ router.post('/api/guardar', requireLogin, async (req, res) => {
   for (const eq of (input.equipos || [])) {
     await query('INSERT INTO acta_equipos (acta_id,nombre,tipo,fabricante,modelo,serie,estado,stock) VALUES (@aid,@n,@t,@f,@m,@s,@e,@st)',
       { aid: actaId, n: eq.nombre||'', t: eq.tipo||'', f: eq.fabricante||'', m: eq.modelo||'', s: eq.serie||'', e: eq.estado||'', st: eq.stock||0 });
+    if (input.tipo === 'entrega' && eq.serie && eq.serie !== '---') {
+      await query(
+        `INSERT INTO equipos_asignados (glpi_item_id,glpi_tabla,nombre,tipo,fabricante,modelo,serie,usuario_nombre,usuario_username,acta_numero,acta_id,estado,fecha_entrega)
+         VALUES (@gi,@gt,@n,@t,@f,@m,@s,@un,@uu,@an,@ai,'activo',@fe)`,
+        { gi: eq.glpi_item_id||null, gt: eq.glpi_tabla||null, n: eq.nombre||'', t: eq.tipo||'', f: eq.fabricante||'', m: eq.modelo||'',
+          s: eq.serie, un: input.recibido_por||null, uu: input.recibido_username||null,
+          an: numero, ai: actaId, fe: input.fecha||null });
+    }
+  }
+  // GLPI state sync: motivo de salida = estado GLPI destino (buscar por nombre exacto)
+  if (input.tipo === 'salida' && input.motivo) {
+    try {
+      const glpi = await getConn();
+      try {
+        const [states] = await glpi.execute('SELECT id FROM glpi_states WHERE name=? LIMIT 1', [input.motivo]);
+        const targetId = states.length ? Number(states[0].id) : null;
+        if (targetId) {
+          const TABLAS = ['glpi_computers','glpi_monitors','glpi_printers','glpi_peripherals','glpi_networkequipments','glpi_phones'];
+          for (const eq of (input.equipos || [])) {
+            if (!eq.serie || eq.serie === '---') continue;
+            for (const tabla of TABLAS) {
+              const [found] = await glpi.execute(`SELECT id FROM ${tabla} WHERE serial=? AND is_deleted=0 LIMIT 1`, [eq.serie]);
+              if (found.length) {
+                await glpi.execute(`UPDATE ${tabla} SET states_id=? WHERE id=?`, [targetId, Number(found[0].id)]);
+                break;
+              }
+            }
+          }
+        }
+      } finally { await glpi.end(); }
+    } catch (e) { console.error('GLPI sync error:', e.message); }
   }
   res.json({ ok: true, id: actaId, numero });
 });
@@ -277,8 +312,10 @@ router.get('/api/mis-equipos', requireLogin, async (req, res) => {
     for (const t of tipos) {
       const [rows] = await conn.execute(`SELECT a.id, a.name, a.serial, a.manufacturers_id, a.states_id FROM ${t.tabla} a WHERE a.users_id=? AND a.is_deleted=0 AND a.is_template=0`, [userId]);
       for (const r of rows) {
-        const fab = r.manufacturers_id ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[r.manufacturers_id]))[0][0]?.name || '') : '';
-        const estado = r.states_id ? ((await conn.execute('SELECT name FROM glpi_states WHERE id=? LIMIT 1',[r.states_id]))[0][0]?.name || '') : '';
+        const statesId = Number(r.states_id) || 0;
+        const mfgId    = Number(r.manufacturers_id) || 0;
+        const fab    = mfgId    ? ((await conn.execute('SELECT name FROM glpi_manufacturers WHERE id=? LIMIT 1',[mfgId]))[0][0]?.name || '') : '';
+        const estado = statesId ? ((await conn.execute('SELECT name FROM glpi_states WHERE id=? LIMIT 1',[statesId]))[0][0]?.name || '') : '';
         results.push({ id: r.id, nombre: r.name, serie: r.serial || '---', fabricante: fab, tipo: t.tipo, estado, tabla: t.tabla });
       }
     }

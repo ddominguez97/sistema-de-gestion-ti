@@ -128,7 +128,14 @@
             "firma_digital": null,
             "created_by": "ddominguez",
             "created_at": "2026-04-01 10:15:00",
-            "updated_at": "2026-04-01 10:15:00"
+            "updated_at": "2026-04-01 10:15:00",
+            "recordatorios": [
+                {
+                    "fecha": "2026-04-16 16:05:23",
+                    "enviado_por": "Admin.GrupoNagsa"
+                }
+            ],
+            "ultimo_recordatorio": "2026-04-16 16:05:23"
         },
         {
             "id": 4,
@@ -250,7 +257,18 @@
             "firma_digital": null,
             "created_by": "cmendoza",
             "created_at": "2026-04-09 09:00:00",
-            "updated_at": "2026-04-09 09:00:00"
+            "updated_at": "2026-04-09 09:00:00",
+            "recordatorios": [
+                {
+                    "fecha": "2026-04-16 16:05:15",
+                    "enviado_por": "Admin.GrupoNagsa"
+                },
+                {
+                    "fecha": "2026-04-16 17:53:36",
+                    "enviado_por": "Darwin.Dominguez"
+                }
+            ],
+            "ultimo_recordatorio": "2026-04-16 17:53:36"
         },
         {
             "id": 7,
@@ -387,7 +405,14 @@
             "firma_digital": null,
             "created_by": "dev_local",
             "created_at": "2026-04-13 20:37:16",
-            "updated_at": "2026-04-13 20:37:16"
+            "updated_at": "2026-04-13 20:37:16",
+            "recordatorios": [
+                {
+                    "fecha": "2026-04-14 19:20:47",
+                    "enviado_por": "dev_local"
+                }
+            ],
+            "ultimo_recordatorio": "2026-04-14 19:20:47"
         }
     ]
 }

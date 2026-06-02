@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inversiones &mdash; <%= branding.nombre %></title>
+<title>Solicitudes de Compra &mdash; <%= branding.nombre %></title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
@@ -13,85 +13,584 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 .topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
 .topbar a.btn-logout{padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;}
 .container{max-width:1200px;margin:24px auto;padding:0 20px;}
-.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
 .page-title{font-size:20px;font-weight:800;}
-.page-title span{font-size:12px;color:var(--text-muted);font-weight:400;margin-left:10px;}
 .btn-primary{padding:10px 20px;border-radius:7px;border:none;background:var(--color-principal);color:#fff;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;}
 .btn-primary:hover{opacity:0.9;}
-.card{background:var(--bg-card);border-radius:10px;padding:24px;border:1px solid var(--border);margin-bottom:20px;}
+.btn-sm{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--bg-hover);color:var(--text-sub);text-decoration:none;display:inline-block;}
+.btn-notif{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid rgba(255,152,0,0.4);background:rgba(255,152,0,0.08);color:#e65100;}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:11px 20px;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;white-space:nowrap;}
+.tab:hover{color:var(--text-main);}
+.tab.active{color:var(--color-principal);border-bottom-color:var(--color-principal);}
+.tab .cnt{display:inline-block;font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;background:var(--bg-dark2);color:var(--text-muted);border:1px solid var(--border);margin-left:6px;vertical-align:middle;}
+.tab.active .cnt.has{background:rgba(224,88,22,0.1);color:var(--color-principal);border-color:rgba(224,88,22,0.3);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.card{background:var(--bg-card);border-radius:10px;border:1px solid var(--border);overflow:hidden;}
+.sec-desc{font-size:12px;color:var(--text-muted);padding:14px 16px 0;}
 .data-table{width:100%;border-collapse:collapse;font-size:12px;}
 .data-table th{background:var(--bg-dark3);color:var(--text-sub);padding:10px 12px;text-align:left;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;border-bottom:2px solid var(--border);}
 .data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text-main);vertical-align:middle;}
+.data-table tr:last-child td{border-bottom:none;}
 .data-table tr:hover td{background:var(--bg-hover);}
-.data-table .empty-row td{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;}
 .data-table a{color:var(--color-principal);text-decoration:none;font-weight:700;}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:0.3px;}
+.empty-row td{text-align:center;padding:36px;color:var(--text-muted);font-size:13px;}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap;}
 .badge-pendiente_cotizacion{background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);}
 .badge-pendiente_aprobacion,.badge-pendiente_aprobacion_cotizacion,.badge-pendiente_aprobacion_pago{background:rgba(0,123,255,0.12);color:#0056b3;border:1px solid rgba(0,123,255,0.3);}
 .badge-en_compra{background:rgba(103,58,183,0.12);color:#673ab7;border:1px solid rgba(103,58,183,0.3);}
 .badge-pendiente_pago{background:rgba(255,193,7,0.15);color:#856404;border:1px solid rgba(255,193,7,0.4);}
 .badge-pagado{background:rgba(40,167,69,0.12);color:#155724;border:1px solid rgba(40,167,69,0.3);}
+.badge-entregado{background:rgba(0,188,212,0.12);color:#00838f;border:1px solid rgba(0,188,212,0.3);}
 .badge-rechazado{background:rgba(220,53,69,0.12);color:#721c24;border:1px solid rgba(220,53,69,0.3);}
-.rol-badge{font-size:10px;color:var(--text-muted);background:var(--bg-dark2);padding:3px 10px;border-radius:20px;border:1px solid var(--border);}
+.badge-rol{font-size:10px;color:var(--text-muted);background:var(--bg-dark2);padding:3px 10px;border-radius:20px;border:1px solid var(--border);}
+.accion-lbl{color:var(--color-principal);font-size:10px;font-weight:700;margin-top:3px;}
+.rec-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:#e65100;background:rgba(255,152,0,0.1);padding:2px 6px;border-radius:12px;border:1px solid rgba(255,152,0,0.3);margin-left:6px;}
 </style>
 <%- include('../partials/branding') %>
 </head>
 <body>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
-    <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;">
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
     <div><div style="font-weight:700;font-size:14px;">Inversiones</div><div class="sub">Solicitudes de compra</div></div>
   </div>
   <div class="user">
-    <span class="rol-badge"><%= rolInfo.rol.toUpperCase() %></span>
+    <span class="badge-rol"><%= rolInfo.rol.toUpperCase() %></span>
     <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
     <a href="/" class="btn-back">&larr; Dashboard</a>
     <a href="/logout" class="btn-logout">Salir</a>
   </div>
 </div>
 
+<%
+const ACCION_ESTADOS = {
+  ti:       ['pendiente_cotizacion','en_compra'],
+  gerente:  ['pendiente_aprobacion_cotizacion','pendiente_aprobacion_pago','pendiente_aprobacion'],
+  contadora:['pendiente_pago'],
+  jefe:     ['pendiente_cotizacion'],
+};
+const FINALES = ['pagado','rechazado','entregado'];
+function elabel(e){
+  return {'pendiente_cotizacion':'Pendiente','pendiente_aprobacion_cotizacion':'Cotización enviada','en_compra':'En compra','pendiente_aprobacion_pago':'Factura subida','pendiente_aprobacion':'En aprobación','pendiente_pago':'Pte. de pago','pagado':'Pagado','entregado':'Desde stock','rechazado':'Rechazado'}[e]||e.replace(/_/g,' ');
+}
+function ffecha(f){return f?new Date(f).toLocaleDateString('es-EC'):'—';}
+function fmonto(m){return m?'$'+Number(m).toFixed(2):'—';}
+function accionLbl(s,rol){
+  if(rol==='ti'){if(s.estado==='pendiente_cotizacion')return '▶ Cotizar o comprar';if(s.estado==='en_compra')return '▶ Subir factura';}
+  if(rol==='gerente'){if(s.estado==='pendiente_aprobacion_cotizacion')return '▶ Aprobar cotización';if(['pendiente_aprobacion_pago','pendiente_aprobacion'].includes(s.estado))return '▶ Aprobar pago';}
+  if(rol==='contadora'&&s.estado==='pendiente_pago')return '▶ Marcar pagado';
+  return '';
+}
+const acStates = ACCION_ESTADOS[rolInfo.rol]||[];
+function fAcc(l){return(l||[]).filter(s=>acStates.includes(s.estado));}
+function fProc(l){return(l||[]).filter(s=>!acStates.includes(s.estado)&&!FINALES.includes(s.estado));}
+function fHist(l){return(l||[]).filter(s=>FINALES.includes(s.estado));}
+%>
+
 <div class="container">
-  <div class="page-header">
-    <div class="page-title">Solicitudes de Compra <span><%= solicitudes.length %> registros</span></div>
+  <div class="top-bar">
+    <div class="page-title">Solicitudes de Compra</div>
     <a href="/inversiones/nueva" class="btn-primary">+ Nueva Solicitud</a>
   </div>
 
-  <div class="card">
-    <table class="data-table">
-      <thead>
+  <% if (rolInfo.rol === 'ti' || rolInfo.rol === 'gerente') {
+    const todas    = data.solicitudes || [];
+    const accion   = fAcc(todas);
+    const proceso  = fProc(todas);
+    const historial= fHist(todas);
+    const propias  = data.propias || [];
+  %>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('propias')">&#128221; Mis solicitudes <span class="cnt<%= propias.length?' has':'' %>"><%= propias.length %></span></div>
+    <div class="tab" onclick="switchTab('accion')">&#128680; Requieren acción <span class="cnt<%= accion.length?' has':'' %>"><%= accion.length %></span></div>
+    <div class="tab" onclick="switchTab('proceso')">&#128260; En proceso <span class="cnt<%= proceso.length?' has':'' %>"><%= proceso.length %></span></div>
+    <div class="tab" onclick="switchTab('historial')">&#128218; Historial <span class="cnt"><%= historial.length %></span></div>
+    <% if (rolInfo.rol === 'ti') { %><div class="tab" onclick="switchTab('catalogo')">&#128221; Catálogo</div><% } %>
+  </div>
+
+  <div class="tab-content active" id="tab-propias">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Empresa</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!propias.length) { %><tr class="empty-row"><td colspan="7">No tienes solicitudes propias. Usa "+ Nueva Solicitud".</td></tr><% } %>
+        <% for(const s of propias){ %>
         <tr>
-          <th>#</th>
-          <th>Empresa</th>
-          <th>Descripción</th>
-          <th>Solicitado por</th>
-          <th>Estado</th>
-          <th>Flujo</th>
-          <th>Monto</th>
-          <th>Fecha</th>
-          <th>Acción</th>
+          <td>#<%= s.id %></td><td><%= s.empresa %></td>
+          <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>">Ver &rarr;</a></td>
         </tr>
-      </thead>
-      <tbody>
-        <% if (!solicitudes.length) { %>
-        <tr class="empty-row"><td colspan="9">No hay solicitudes registradas</td></tr>
         <% } %>
-        <% for (const s of solicitudes) { %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-accion">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Empresa</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!accion.length) { %><tr class="empty-row"><td colspan="8">Sin solicitudes pendientes de acción</td></tr><% } %>
+        <% for(const s of accion){const lbl=accionLbl(s,rolInfo.rol); %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.empresa %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>">
+            <%= s.descripcion %>
+            <% if(rolInfo.rol==='ti'&&s.recordatorio_ti_at&&s.estado==='pendiente_cotizacion'){%><span class="rec-badge">&#128276; Recordatorio</span><%}%>
+          </td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span><% if(lbl){%><div class="accion-lbl"><%=lbl%></div><%}%></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>">Ver &rarr;</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-proceso">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Empresa</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!proceso.length) { %><tr class="empty-row"><td colspan="8">Sin solicitudes en proceso</td></tr><% } %>
+        <% for(const s of proceso){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.empresa %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>">Ver &rarr;</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-historial">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Empresa</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!historial.length) { %><tr class="empty-row"><td colspan="8">Sin registros</td></tr><% } %>
+        <% for(const s of historial){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.empresa %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>">Ver &rarr;</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (rolInfo.rol === 'ti') { %>
+  <div class="tab-content" id="tab-catalogo">
+    <div class="card">
+      <div style="padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+        <span style="font-size:13px;font-weight:700;color:var(--text-main);">Artículos del catálogo</span>
+        <button class="btn-primary" style="font-size:12px;padding:7px 16px;" onclick="mostrarFormCat()">+ Agregar artículo</button>
+      </div>
+      <div id="cat-form" style="display:none;padding:16px;border-bottom:1px solid var(--border);background:var(--bg-dark3);">
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;">Nombre *</label>
+            <input id="cat-nombre" type="text" placeholder="Ej: Laptop" style="padding:8px 12px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg-input);color:var(--text-main);font-size:13px;width:220px;outline:none;font-family:inherit;">
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);display:block;margin-bottom:4px;">Categoría *</label>
+            <select id="cat-categoria" style="padding:8px 12px;border-radius:6px;border:1.5px solid var(--border2);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;font-family:inherit;">
+              <option>Computación</option><option>Periféricos</option><option>Impresión</option>
+              <option>Telefonía</option><option>Red</option><option>Mobiliario</option>
+              <option>Software</option><option>Otro</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="font-size:12px;padding:8px 16px;" onclick="guardarArticulo()">Guardar</button>
+          <button class="btn-sm" onclick="ocultarFormCat()">Cancelar</button>
+        </div>
+      </div>
+      <div id="cat-lista"><div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">Cargando...</div></div>
+    </div>
+  </div>
+  <% } %>
+
+  <% } else if (rolInfo.rol === 'contadora') {
+    const todas    = data.todas || [];
+    const accion   = fAcc(todas);
+    const proceso  = fProc(todas);
+    const historial= fHist(todas);
+    const todasIds = new Set(todas.map(s=>s.id));
+    const propias  = (data.propias||[]).filter(s=>!todasIds.has(s.id));
+  %>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('accion')">&#128179; Pte. de pago — <%= rolInfo.empresa||'' %> <span class="cnt<%= accion.length?' has':'' %>"><%= accion.length %></span></div>
+    <div class="tab" onclick="switchTab('proceso')">&#128260; En proceso <span class="cnt<%= proceso.length?' has':'' %>"><%= proceso.length %></span></div>
+    <div class="tab" onclick="switchTab('historial')">&#128218; Historial <span class="cnt"><%= historial.length %></span></div>
+    <% if (propias.length) { %><div class="tab" onclick="switchTab('propias')">&#128221; Mis solicitudes <span class="cnt has"><%= propias.length %></span></div><% } %>
+  </div>
+
+  <div class="tab-content active" id="tab-accion">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!accion.length) { %><tr class="empty-row"><td colspan="6">Sin pagos pendientes</td></tr><% } %>
+        <% for(const s of accion){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td style="font-weight:700;color:var(--color-principal)"><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Marcar pagado &rarr;</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-proceso">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!proceso.length) { %><tr class="empty-row"><td colspan="7">Sin solicitudes en proceso</td></tr><% } %>
+        <% for(const s of proceso){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-historial">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!historial.length) { %><tr class="empty-row"><td colspan="7">Sin registros</td></tr><% } %>
+        <% for(const s of historial){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (propias.length) { %>
+  <div class="tab-content" id="tab-propias">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Empresa</th><th>Descripción</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% for(const s of propias){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.empresa %></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+
+  <% } else if (rolInfo.rol === 'jefe') {
+    const equipo  = data.equipo || [];
+    const eqAcc   = fAcc(equipo);
+    const eqProc  = fProc(equipo);
+    const eqHist  = fHist(equipo);
+    const propias = data.propias || [];
+  %>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('eq-acc')">&#128276; Pte. con TI <span class="cnt<%= eqAcc.length?' has':'' %>"><%= eqAcc.length %></span></div>
+    <div class="tab" onclick="switchTab('eq-proc')">&#128260; En proceso <span class="cnt<%= eqProc.length?' has':'' %>"><%= eqProc.length %></span></div>
+    <div class="tab" onclick="switchTab('eq-hist')">&#128218; Historial equipo <span class="cnt"><%= eqHist.length %></span></div>
+    <div class="tab" onclick="switchTab('propias')">&#128221; Mis solicitudes <span class="cnt<%= propias.length?' has':'' %>"><%= propias.length %></span></div>
+  </div>
+
+  <div class="tab-content active" id="tab-eq-acc">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Fecha</th><th>Notificar</th><th></th></tr></thead>
+        <tbody>
+        <% if (!eqAcc.length) { %><tr class="empty-row"><td colspan="7">Sin solicitudes pendientes del equipo</td></tr><% } %>
+        <% for(const s of eqAcc){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><button class="btn-notif" onclick="notificarTI(<%= s.id %>)">&#128276; <%= s.recordatorio_ti_at?'Recordar':'Notificar TI' %></button></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-eq-proc">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!eqProc.length) { %><tr class="empty-row"><td colspan="7">Sin solicitudes en proceso</td></tr><% } %>
+        <% for(const s of eqProc){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-eq-hist">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Solicitante</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!eqHist.length) { %><tr class="empty-row"><td colspan="7">Sin registros</td></tr><% } %>
+        <% for(const s of eqHist){ %>
+        <tr>
+          <td>#<%= s.id %></td><td><%= s.solicitado_nombre %></td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-propias">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Descripción</th><th>Estado</th><th>Monto</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!propias.length) { %><tr class="empty-row"><td colspan="6">No tienes solicitudes. Usa "+ Nueva Solicitud".</td></tr><% } %>
+        <% for(const s of propias){ %>
         <tr>
           <td>#<%= s.id %></td>
-          <td><%= s.empresa %></td>
-          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
-          <td><%= s.solicitado_nombre %></td>
-          <td><span class="badge badge-<%= s.estado %>"><%= s.estado.replace(/_/g,' ') %></span></td>
-          <td style="text-align:center;font-weight:700;"><%=s.flujo%></td>
-          <td><%= s.cotizacion_monto ? '$' + Number(s.cotizacion_monto).toFixed(2) : '—' %></td>
-          <td style="color:var(--text-muted)"><%= new Date(s.created_at).toLocaleDateString('es-EC') %></td>
-          <td><a href="/inversiones/<%= s.id %>">Ver</a></td>
+          <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td><%= fmonto(s.cotizacion_monto) %></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
         </tr>
         <% } %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <% } else {
+    const propias  = data.propias || [];
+    const activas  = propias.filter(s=>!FINALES.includes(s.estado));
+    const historial= propias.filter(s=>FINALES.includes(s.estado));
+  %>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('activas')">&#128260; Activas <span class="cnt<%= activas.length?' has':'' %>"><%= activas.length %></span></div>
+    <div class="tab" onclick="switchTab('historial')">&#128218; Historial <span class="cnt"><%= historial.length %></span></div>
+  </div>
+
+  <div class="tab-content active" id="tab-activas">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Descripción</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!activas.length) { %><tr class="empty-row"><td colspan="5">No tienes solicitudes activas. Usa "+ Nueva Solicitud".</td></tr><% } %>
+        <% for(const s of activas){ %>
+        <tr>
+          <td>#<%= s.id %></td>
+          <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver estado</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-historial">
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Descripción</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+        <% if (!historial.length) { %><tr class="empty-row"><td colspan="5">Sin registros</td></tr><% } %>
+        <% for(const s of historial){ %>
+        <tr>
+          <td>#<%= s.id %></td>
+          <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<%= s.descripcion %>"><%= s.descripcion %></td>
+          <td><span class="badge badge-<%= s.estado %>"><%= elabel(s.estado) %></span></td>
+          <td style="color:var(--text-muted)"><%= ffecha(s.created_at) %></td>
+          <td><a href="/inversiones/<%= s.id %>" class="btn-sm">Ver</a></td>
+        </tr>
+        <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% } %>
 </div>
 
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const el = document.getElementById('tab-' + id);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') === `switchTab('${id}')`) t.classList.add('active');
+  });
+  if (id === 'catalogo') cargarCatalogo();
+}
+
+// ── Catálogo ──────────────────────────────────────────────────
+let _catEdit = null;
+
+function mostrarFormCat(id, nombre, categoria) {
+  _catEdit = id || null;
+  document.getElementById('cat-nombre').value = nombre || '';
+  if (categoria) document.getElementById('cat-categoria').value = categoria;
+  document.getElementById('cat-form').style.display = 'block';
+  document.getElementById('cat-nombre').focus();
+}
+
+function ocultarFormCat() {
+  _catEdit = null;
+  document.getElementById('cat-form').style.display = 'none';
+}
+
+async function guardarArticulo() {
+  const nombre = document.getElementById('cat-nombre').value.trim();
+  const categoria = document.getElementById('cat-categoria').value;
+  if (!nombre) { toast('Ingresa un nombre', 'error'); return; }
+  try {
+    const url = _catEdit ? `/inversiones/api/catalogo/${_catEdit}` : '/inversiones/api/catalogo';
+    const method = _catEdit ? 'PUT' : 'POST';
+    const r = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify({ nombre, categoria }) });
+    const res = await r.json();
+    if (res.ok) { toast(_catEdit ? 'Artículo actualizado' : 'Artículo agregado', 'success'); ocultarFormCat(); cargarCatalogo(); }
+    else toast(res.error || 'Error', 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
+}
+
+async function toggleArticulo(id) {
+  try {
+    const r = await fetch(`/inversiones/api/catalogo/${id}/toggle`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+    const res = await r.json();
+    if (res.ok) cargarCatalogo();
+    else toast(res.error || 'Error', 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
+}
+
+function toggleCatCat(cat) {
+  const body = document.getElementById('catcat-' + cat);
+  const icon = document.getElementById('caticon-' + cat);
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  if (icon) icon.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+async function cargarCatalogo() {
+  try {
+    const r = await fetch('/inversiones/api/catalogo');
+    const items = await r.json();
+    const lista = document.getElementById('cat-lista');
+    if (!lista) return;
+    if (!items.length) {
+      lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted);font-size:13px;">No hay artículos. Usa "+ Agregar artículo" para comenzar.</div>';
+      return;
+    }
+    const cats = {};
+    for (const a of items) {
+      if (!cats[a.categoria]) cats[a.categoria] = [];
+      cats[a.categoria].push(a);
+    }
+    let html = '';
+    for (const [cat, artis] of Object.entries(cats)) {
+      const catId = cat.replace(/[^a-zA-Z0-9]/g, '_');
+      const activos = artis.filter(a => a.activo).length;
+      html += `<div style="border-bottom:1px solid var(--border);">
+        <div onclick="toggleCatCat('${catId}')" style="display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;user-select:none;background:var(--bg-dark3);transition:background 0.12s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-dark3)'">
+          <span style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-main);flex:1;">${cat}</span>
+          <span style="font-size:10px;color:var(--text-muted)">${activos} activo${activos!==1?'s':''} / ${artis.length} total</span>
+          <span id="caticon-${catId}" style="font-size:11px;color:var(--text-muted);transition:transform 0.2s;transform:rotate(180deg)">&#9660;</span>
+        </div>
+        <div id="catcat-${catId}">
+          <table class="data-table" style="table-layout:fixed;"><colgroup><col><col style="width:100px"><col style="width:160px"></colgroup><tbody>`;
+      for (const a of artis) {
+        const est = a.activo
+          ? '<span class="badge" style="background:rgba(40,167,69,0.1);color:#155724;border:1px solid rgba(40,167,69,0.3)">Activo</span>'
+          : '<span class="badge" style="background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border2)">Inactivo</span>';
+        html += `<tr style="${!a.activo?'opacity:0.5':''}">
+          <td style="font-weight:700;padding-left:24px;">${a.nombre}</td>
+          <td>${est}</td>
+          <td style="text-align:right;white-space:nowrap;">
+            <button class="btn-sm" onclick="mostrarFormCat(${a.id},'${a.nombre.replace(/'/g,"\\'")}','${a.categoria}')">Editar</button>
+            <button class="btn-sm" onclick="toggleArticulo(${a.id})">${a.activo?'Desactivar':'Activar'}</button>
+          </td>
+        </tr>`;
+      }
+      html += `</tbody></table></div></div>`;
+    }
+    lista.innerHTML = html;
+  } catch(e) {
+    const lista = document.getElementById('cat-lista');
+    if (lista) lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-muted)">Error al cargar catálogo</div>';
+  }
+}
+async function notificarTI(id) {
+  const r = await fetch(`/inversiones/${id}/notificar-ti`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: '{}' });
+  const res = await r.json();
+  if (res.ok) { toast('Recordatorio enviado a TI'); location.reload(); }
+  else toast(res.error || 'Error', 'error');
+}
+</script>
 </body>
 </html>

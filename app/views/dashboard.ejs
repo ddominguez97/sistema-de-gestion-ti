@@ -92,9 +92,10 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 const todosModulos = {
   etiquetas:   { url:'/etiquetas', icono:'\u{1F3F7}\u{FE0F}', titulo:'Etiquetas de Activos', desc:'Genera e imprime etiquetas con código QR para todos los activos registrados en GLPI.', footer:'Computadoras - Monitores - Impresoras - Periféricos - más' },
   actas:       { url:'/actas', icono:'\u{1F4CB}', titulo:'Actas de Equipos', desc:'Genera actas de entrega y salida de equipos con datos desde GLPI o ingreso manual.', footer:'Entrega - Salida - Impresión / PDF' },
-  reportes:    { url:'/reportes', icono:'\u{1F4CA}', titulo:'Reportes y Estadísticas', desc:'Registro de actas de entrega y salida, aceptación/resguardo, estadísticas por período.', footer:'Registro actas - Aceptación / Resguardo - Estadísticas' },
-  inversiones: { url:'/proximamente?m=inversiones', icono:'\u{1F4B0}', titulo:'Formato de Inversión', desc:'Solicitudes de compra, inversión por empresa y seguimiento de adquisiciones.', footer:'Compras - Inversión - Por entidad' },
-  permisos:    { url:'/permisos', icono:'\u{1F514}', titulo:'Permisos y Notificaciones', desc:'Gestiona permisos de acceso por usuario y grupo, notificaciones y alertas.', footer:'Permisos - Grupos - Usuarios' },
+  reportes:    { url:'/reportes', icono:'\u{1F4CB}', titulo:'Seguimiento de Actas', desc:'Registro y seguimiento de actas de entrega y salida de equipos, aceptación, resguardo y estadísticas.', footer:'Registro actas - Aceptación / Resguardo - Estadísticas' },
+  inversiones:       { url:'/inversiones', icono:'\u{1F6D2}', titulo:'Solicitudes de Compra', desc:'Gestión de solicitudes de compra e inversión por empresa, seguimiento y aprobaciones.', footer:'Solicitudes - Aprobaciones - Por empresa' },
+  equipos_asignados: { url:'/equipos', icono:'\u{1F4BC}', titulo:'Equipos', desc:'Consulta tus equipos asignados. TI visualiza la asignación global por empresa, área y usuario con trazabilidad de actas.', footer:'Mis Equipos - Asignación global - Estado GLPI - Actas', public: true },
+  permisos:          { url:'/permisos', icono:'\u{1F510}', titulo:'Permisos del Sistema', desc:'Gestiona permisos de acceso por usuario y grupo, jerarquía y configuración del sistema.', footer:'Permisos - Grupos - Usuarios' },
 };
 
 // Filtrar modulos segun permisos del usuario
@@ -111,10 +112,10 @@ function getBadge(estado) {
 const grActivo = {}, grPruebas = {}, grDeshabilitado = {};
 for (const [key, mod] of Object.entries(todosModulos)) {
   // Verificar si el usuario tiene permiso para ver este modulo
-  if (nInfo.nivel > 2 && !pUser[key]) continue;
+  if (nInfo.nivel > 2 && !pUser[key] && !mod.public) continue;
   const estado = getEstado(key);
   // Modulos en pruebas: N1/N2 siempre, N3/N4 solo si tienen permiso explicito
-  if (estado === 'pruebas' && nInfo.nivel > 2 && !pUser[key]) continue;
+  if (estado === 'pruebas' && nInfo.nivel > 2 && !pUser[key] && !mod.public) continue;
   if (estado === 'activo') grActivo[key] = mod;
   else if (estado === 'pruebas') grPruebas[key] = mod;
   else grDeshabilitado[key] = mod;
@@ -139,6 +140,14 @@ function renderCards(grupo, estado) {
 }
 %>
 
+<% if (!Object.keys(grActivo).length && !Object.keys(grPruebas).length) { %>
+  <div style="text-align:center;padding:48px 24px;color:var(--text-muted);">
+    <div style="font-size:32px;margin-bottom:12px;">&#128274;</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:6px;">Sin módulos asignados</div>
+    <div style="font-size:13px;">Comunícate con Sistemas para que habiliten los módulos correspondientes a tu perfil.</div>
+  </div>
+<% } %>
+
 <% if (Object.keys(grActivo).length) { %>
   <div class="section-label">Módulos disponibles</div>
   <div class="modules-grid"><%- renderCards(grActivo, 'activo') %></div>
@@ -149,10 +158,6 @@ function renderCards(grupo, estado) {
   <div class="modules-grid"><%- renderCards(grPruebas, 'pruebas') %></div>
 <% } %>
 
-<% if (Object.keys(grDeshabilitado).length) { %>
-  <div class="section-label">Próximamente</div>
-  <div class="modules-grid"><%- renderCards(grDeshabilitado, 'deshabilitado') %></div>
-<% } %>
 </div>
 <script>
 // Notificaciones segun nivel
@@ -263,15 +268,7 @@ async function cargarNotificaciones() {
 }
 cargarNotificaciones();
 
-function toggleTema(){
-  const actual='<%= branding.tema %>';
-  const nuevo=actual==='oscuro'?'claro':'oscuro';
-  fetch('/admin/cambiar-tema',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({empresa_tema:nuevo})
-  }).then(()=>location.reload());
-}
+
 </script>
 </body>
 </html>

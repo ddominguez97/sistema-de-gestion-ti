@@ -56,6 +56,17 @@ router.get('/api/arbol', requireLogin, (req, res) => {
   }
 });
 
+// GET /permisos/api/glpi-entidades — empresas desde grupos config (fuente de verdad)
+router.get('/api/glpi-entidades', requireLogin, (req, res) => {
+  const cfg = loadConfig();
+  if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json([]);
+  const pc = cfg.permisos_config || {};
+  const empresas = [...new Set(
+    Object.values(pc.grupos || {}).map(g => (g.empresa || '').trim()).filter(Boolean)
+  )].sort().map(nombre => ({ nombre }));
+  res.json(empresas);
+});
+
 // GET /permisos/api/todos-usuarios
 router.get('/api/todos-usuarios', requireLogin, async (req, res) => {
   const cfg = loadConfig();
@@ -138,14 +149,13 @@ router.get('/api/buscar-usuarios', requireLogin, async (req, res) => {
        ORDER BY u.realname, u.firstname LIMIT 50`,
       [`%${q}%`, `%${q}%`, `%${q}%`]
     );
-    console.log(`[buscar] GLPI "${q}": ${rows.length} resultados`);
     glpiResultados = rows.map(r => ({
       username: r.name,
       nombre: ((r.firstname || '') + ' ' + (r.realname || '')).trim() || r.name,
       tipo: r.authtype === 1 ? 'GLPI' : r.authtype === 2 ? 'LDAP' : r.authtype === 3 ? 'AD' : 'Otro',
       asignado: asignados[(r.name || '').toLowerCase()] || null,
     }));
-  } catch (e) { console.error(`[buscar] GLPI error:`, e.message); }
+  } catch (e) { console.error('Error busqueda GLPI:', e.message); }
   finally { if (conn) try { await conn.end(); } catch {} }
 
   // Buscar en AD directo (usuarios que aun no han entrado al sistema)
@@ -154,13 +164,10 @@ router.get('/api/buscar-usuarios', requireLogin, async (req, res) => {
     const adCfg = await resolveADConfig(cfg.active_directory || {});
     if (adCfg && adCfg.servidor) {
       const adUsers = await searchADUsers(q, adCfg);
-      console.log(`[buscar] AD "${q}": ${adUsers.length} resultados`, adUsers.map(u => u.username));
       const glpiUsernames = new Set(glpiResultados.map(r => r.username.toLowerCase()));
       adResultados = adUsers
         .filter(u => !glpiUsernames.has(u.username.toLowerCase()))
         .map(u => ({ ...u, asignado: asignados[u.username.toLowerCase()] || null }));
-    } else {
-      console.warn('[buscar] AD no configurado o sin servidor');
     }
   } catch (e) { console.error('Error busqueda AD:', e.message); }
 
@@ -221,9 +228,9 @@ router.post('/api/ti/eliminar', requireLogin, async (req, res) => {
 router.post('/api/grupo/crear', requireLogin, async (req, res) => {
   const cfg = loadConfig();
   if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
-  const { nombre } = req.body;
+  const { nombre, empresa } = req.body;
   if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
-  const result = await query('INSERT INTO permisos_grupos (nombre) OUTPUT INSERTED.id VALUES (@nombre)', { nombre });
+  const result = await query('INSERT INTO permisos_grupos (nombre, empresa) OUTPUT INSERTED.id VALUES (@nombre, @empresa)', { nombre, empresa: empresa || null });
   await refreshCache();
   res.json({ ok: true, id: result.recordset[0].id });
 });
@@ -232,9 +239,12 @@ router.post('/api/grupo/crear', requireLogin, async (req, res) => {
 router.post('/api/grupo/editar', requireLogin, async (req, res) => {
   const cfg = loadConfig();
   if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
-  const { grupo_id, nombre } = req.body;
+  const { grupo_id, nombre, empresa } = req.body;
   if (!grupo_id) return res.status(400).json({ error: 'Grupo requerido' });
-  if (nombre) await query('UPDATE permisos_grupos SET nombre=@nombre, updated_at=GETDATE() WHERE id=@gid', { gid: parseInt(grupo_id), nombre });
+  const sets = [], params = { gid: parseInt(grupo_id) };
+  if (nombre) { sets.push('nombre=@nombre'); params.nombre = nombre; }
+  if (typeof empresa !== 'undefined') { sets.push('empresa=@empresa'); params.empresa = empresa || null; }
+  if (sets.length) await query('UPDATE permisos_grupos SET ' + sets.join(',') + ', updated_at=GETDATE() WHERE id=@gid', params);
   await refreshCache();
   res.json({ ok: true });
 });
@@ -283,11 +293,15 @@ router.post('/api/grupo/quitar-jefe', requireLogin, async (req, res) => {
 router.post('/api/grupo/miembro', requireLogin, async (req, res) => {
   const cfg = loadConfig();
   if (getNivelUsuario(cfg, req).nivel > 2) return res.status(403).json({ error: 'Solo TI' });
-  const { grupo_id, username, nombre } = req.body;
+  const { grupo_id, username, nombre, empresa } = req.body;
   if (!grupo_id || !username) return res.status(400).json({ error: 'Datos incompletos' });
   const { recordset } = await query('SELECT id FROM permisos_grupo_miembros WHERE grupo_id=@gid AND username=@user', { gid: parseInt(grupo_id), user: username.toLowerCase() });
   if (!recordset.length) {
-    await query('INSERT INTO permisos_grupo_miembros (grupo_id,username,nombre) VALUES (@gid,@user,@nombre)', { gid: parseInt(grupo_id), user: username.toLowerCase(), nombre: nombre || username });
+    await query('INSERT INTO permisos_grupo_miembros (grupo_id,username,nombre,empresa) VALUES (@gid,@user,@nombre,@empresa)',
+      { gid: parseInt(grupo_id), user: username.toLowerCase(), nombre: nombre || username, empresa: empresa || null });
+  } else if (empresa) {
+    await query('UPDATE permisos_grupo_miembros SET empresa=@empresa WHERE grupo_id=@gid AND username=@user',
+      { gid: parseInt(grupo_id), user: username.toLowerCase(), empresa });
   }
   await refreshCache();
   res.json({ ok: true });
@@ -321,12 +335,117 @@ router.post('/api/grupo/permisos', requireLogin, async (req, res) => {
   if (nivelInfo.nivel <= 2 && typeof permisos.puede_aprobar_cotizacion !== 'undefined') { sets.push('puede_aprobar_cotizacion=@aprobCot'); params.aprobCot = permisos.puede_aprobar_cotizacion ? 1 : 0; }
   if (nivelInfo.nivel <= 2 && typeof permisos.puede_aprobar_pago !== 'undefined') { sets.push('puede_aprobar_pago=@aprobPago'); params.aprobPago = permisos.puede_aprobar_pago ? 1 : 0; }
   if (nivelInfo.nivel <= 2 && typeof permisos.puede_marcar_pagado !== 'undefined') { sets.push('puede_marcar_pagado=@marcPagado'); params.marcPagado = permisos.puede_marcar_pagado ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.ver_actas !== 'undefined') { sets.push('ver_actas=@verActas'); params.verActas = permisos.ver_actas ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.ver_etiquetas !== 'undefined') { sets.push('ver_etiquetas=@verEtiq'); params.verEtiq = permisos.ver_etiquetas ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.ver_inversiones !== 'undefined') { sets.push('ver_inversiones=@verInv'); params.verInv = permisos.ver_inversiones ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.ver_reportes !== 'undefined') { sets.push('ver_reportes=@verRep'); params.verRep = permisos.ver_reportes ? 1 : 0; }
+  if (nivelInfo.nivel <= 2 && typeof permisos.ver_permisos !== 'undefined') { sets.push('ver_permisos=@verPerm'); params.verPerm = permisos.ver_permisos ? 1 : 0; }
   if (sets.length) await query('UPDATE permisos_grupos SET ' + sets.join(',') + ', updated_at=GETDATE() WHERE id=@gid', params);
   await refreshCache();
   res.json({ ok: true });
 });
 
 // GET /permisos/api/motivos
+// GET /permisos/api/sin-grupo — usuarios de AD/GLPI no asignados a ningún grupo, agrupados por empresa
+router.get('/api/sin-grupo', requireLogin, async (req, res) => {
+  const cfg = loadConfig();
+  const nivelInfo = getNivelUsuario(cfg, req);
+  if (nivelInfo.nivel > 2) return res.status(403).json({ error: 'Sin permiso' });
+
+  const asignados = getUsuariosAsignados(cfg);
+  const pc = cfg.permisos_config || {};
+  // Empresas conocidas: las configuradas en algún grupo
+  const knownEmpresas = new Set(
+    Object.values(pc.grupos || {})
+      .map(g => (g.empresa || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+
+  let conn;
+  try {
+    conn = await getConn();
+    const [rows] = await conn.execute(
+      `SELECT u.name, u.firstname, u.realname
+       FROM glpi_users u
+       WHERE u.is_deleted=0 AND u.is_active=1 AND u.name != ''
+         AND u.authtype IN (2,3)
+       ORDER BY u.realname, u.firstname`
+    );
+    const sinGrupo = rows
+      .map(r => ({ username: r.name, nombre: ((r.firstname||'')+' '+(r.realname||'')).trim() || r.name }))
+      .filter(u => !asignados[u.username.toLowerCase()]);
+
+    if (!sinGrupo.length) return res.json({ empresas: [], sin_empresa: [] });
+
+    // Obtener OU top-level desde AD (distinguishedName)
+    const ouMap = {}; // username → top-level OU
+    try {
+      const adCfg = await resolveADConfig(cfg.active_directory || {});
+      if (adCfg && adCfg.bind_password) {
+        const ldap = require('ldapjs');
+        const loginField = adCfg.login_field || 'sAMAccountName';
+        const userSet = new Set(sinGrupo.map(u => u.username.toLowerCase()));
+        await new Promise(resolve => {
+          const protocol = adCfg.use_tls ? 'ldaps' : 'ldap';
+          const client = ldap.createClient({ url: `${protocol}://${adCfg.servidor}:${parseInt(adCfg.puerto)||389}`, connectTimeout: 6000 });
+          client.on('error', () => resolve());
+          client.bind(adCfg.bind_dn, adCfg.bind_password, err => {
+            if (err) { client.destroy(); return resolve(); }
+            client.search(adCfg.base_dn || '', {
+              filter: `(&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))`,
+              attributes: [loginField, 'distinguishedName'], scope: 'sub', sizeLimit: 2000,
+            }, (searchErr, searchRes) => {
+              if (searchErr) { client.destroy(); return resolve(); }
+              searchRes.on('searchEntry', entry => {
+                const attrs = (entry.pojo && entry.pojo.attributes) ? entry.pojo.attributes : [];
+                let username = '', dn = entry.dn?.toString() || '';
+                for (const a of attrs) {
+                  if (a.type.toLowerCase() === loginField.toLowerCase()) username = (a.values && a.values[0] ? a.values[0] : '').toLowerCase();
+                  if (a.type === 'distinguishedName' && a.values && a.values[0]) dn = a.values[0];
+                }
+                if (!username || !userSet.has(username)) return;
+                const ous = (dn.match(/OU=([^,]+)/gi) || []).map(o => o.replace(/ou=/i, ''));
+                // ous[last] = top-level (empresa o OU raíz), ous[0] = más específico
+                ouMap[username] = ous.length ? ous[ous.length - 1] : '';
+              });
+              searchRes.on('end', () => { client.destroy(); resolve(); });
+              searchRes.on('error', () => { client.destroy(); resolve(); });
+            });
+          });
+        });
+      }
+    } catch {}
+
+    // Separar: empresas conocidas vs OUs desconocidos
+    const empMap = {};    // empresa conocida → [users]
+    const ouSinEmp = {};  // OU desconocido → [users]
+
+    for (const u of sinGrupo) {
+      const topOU = ouMap[u.username.toLowerCase()] || '';
+      if (topOU && knownEmpresas.has(topOU.toLowerCase())) {
+        if (!empMap[topOU]) empMap[topOU] = [];
+        empMap[topOU].push(u);
+      } else {
+        const ouLabel = topOU || 'Sin OU';
+        if (!ouSinEmp[ouLabel]) ouSinEmp[ouLabel] = [];
+        ouSinEmp[ouLabel].push(u);
+      }
+    }
+
+    const empresas = Object.entries(empMap)
+      .sort(([a],[b]) => a.localeCompare(b))
+      .map(([nombre, usuarios]) => ({ nombre, usuarios: usuarios.sort((a,b) => a.nombre.localeCompare(b.nombre)) }));
+
+    const sin_empresa = Object.entries(ouSinEmp)
+      .sort(([a],[b]) => a.localeCompare(b))
+      .map(([ou, usuarios]) => ({ ou, usuarios: usuarios.sort((a,b) => a.nombre.localeCompare(b.nombre)) }));
+
+    res.json({ empresas, sin_empresa });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  } finally { if (conn) try { await conn.end(); } catch {} }
+});
+
 router.get('/api/motivos', requireLogin, async (req, res) => {
   const { recordset } = await query('SELECT nombre, tipo FROM motivos_salida WHERE activo=1 ORDER BY orden');
   res.json(recordset);

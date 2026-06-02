@@ -34,6 +34,16 @@ window.NAGSA_NOMBRE = '<%= branding.nombre %>';
 window.NAGSA_TEMA   = '<%= branding.tema %>';
 window.NAGSA_URL    = '<%= glpiUrl %>';
 
+// Tema toggle global
+window.toggleTema = function() {
+  var nuevo = window.NAGSA_TEMA === 'oscuro' ? 'claro' : 'oscuro';
+  fetch('/admin/cambiar-tema', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ empresa_tema: nuevo })
+  }).then(function() { location.reload(); });
+};
+
 // Toast global
 (function(){
   var c = document.createElement('div');

@@ -41,6 +41,8 @@ async function loadConfigFromDB() {
       modo: ad.modo, habilitado: !!ad.habilitado, nombre: ad.nombre,
       servidor: ad.servidor, puerto: ad.puerto, dominio: ad.dominio,
       base_dn: ad.base_dn, sufijo_usuario: ad.sufijo_usuario,
+      bind_dn: ad.bind_dn || '',
+      bind_password: ad.bind_password || '',
     };
   }
 
@@ -65,21 +67,29 @@ async function loadPermisosFromDB() {
   }
 
   // Grupos
-  const { recordset: grupoRows } = await query('SELECT id, nombre, perm_actas, perm_reportes, perm_crear_entrega, puede_aprobar_cotizacion, puede_aprobar_pago, puede_marcar_pagado FROM permisos_grupos');
+  const { recordset: grupoRows } = await query('SELECT id, nombre, empresa, perm_actas, perm_reportes, perm_crear_entrega, puede_aprobar_cotizacion, puede_aprobar_pago, puede_marcar_pagado, ver_actas, ver_etiquetas, ver_inversiones, ver_reportes, ver_permisos FROM permisos_grupos');
   for (const g of grupoRows) {
     const gid = String(g.id);
     const { recordset: jefes } = await query('SELECT username, nombre FROM permisos_grupo_jefes WHERE grupo_id=@gid', { gid: g.id });
-    const { recordset: miembros } = await query('SELECT username, nombre FROM permisos_grupo_miembros WHERE grupo_id=@gid', { gid: g.id });
+    const { recordset: miembros } = await query('SELECT username, nombre, empresa FROM permisos_grupo_miembros WHERE grupo_id=@gid', { gid: g.id });
 
     pc.grupos[gid] = {
       nombre: g.nombre,
+      empresa: g.empresa || null,
       jefes: jefes.map(j => ({ username: j.username, nombre: j.nombre })),
-      miembros: miembros.map(m => ({ username: m.username, nombre: m.nombre })),
+      miembros: miembros.map(m => ({ username: m.username, nombre: m.nombre, empresa: m.empresa || null })),
       permisos: { actas: !!g.perm_actas, reportes: !!g.perm_reportes, crear_entrega: !!g.perm_crear_entrega },
       inversiones: {
         puede_aprobar_cotizacion: !!g.puede_aprobar_cotizacion,
         puede_aprobar_pago: !!g.puede_aprobar_pago,
         puede_marcar_pagado: !!g.puede_marcar_pagado,
+      },
+      modulos_visibles: {
+        actas: !!g.ver_actas,
+        etiquetas: !!g.ver_etiquetas,
+        inversiones: !!g.ver_inversiones,
+        reportes: !!g.ver_reportes,
+        permisos: !!g.ver_permisos,
       },
     };
   }
@@ -148,10 +158,12 @@ async function syncConfigToDB(cfg) {
   if (cfg.active_directory) {
     const ad = cfg.active_directory;
     await query(`UPDATE configuracion_ad SET modo=@modo, habilitado=@hab, nombre=@nombre, servidor=@servidor,
-      puerto=@puerto, dominio=@dominio, base_dn=@base_dn, sufijo_usuario=@sufijo WHERE id=1`, {
+      puerto=@puerto, dominio=@dominio, base_dn=@base_dn, sufijo_usuario=@sufijo,
+      bind_dn=@bdn, bind_password=@bpw WHERE id=1`, {
       modo: ad.modo || 'automatica', hab: ad.habilitado ? 1 : 0, nombre: ad.nombre || '',
       servidor: ad.servidor || '', puerto: ad.puerto || 389, dominio: ad.dominio || '',
       base_dn: ad.base_dn || '', sufijo: ad.sufijo_usuario || '',
+      bdn: ad.bind_dn || '', bpw: ad.bind_password || '',
     });
   }
   // ti_nombre_area
@@ -181,11 +193,29 @@ async function seedInversionesGroups() {
   }
 }
 
+// Normalizar nombres de empresa mal escritos (ej: "windowworld" → "Window World")
+async function fixEmpresaNames() {
+  const fixes = [
+    { wrong: 'windowworld', correct: 'Window World' },
+  ];
+  for (const { wrong, correct } of fixes) {
+    await query(
+      `UPDATE permisos_grupos SET empresa=@correct WHERE REPLACE(LOWER(ISNULL(empresa,'')), ' ', '')=@wrong`,
+      { correct, wrong }
+    );
+    await query(
+      `UPDATE permisos_grupo_miembros SET empresa=@correct WHERE REPLACE(LOWER(ISNULL(empresa,'')), ' ', '')=@wrong`,
+      { correct, wrong }
+    );
+  }
+}
+
 // Inicializar cache desde SQL al arrancar
 async function initConfig() {
   try {
     await loadConfigFromDB();
     await seedInversionesGroups();
+    await fixEmpresaNames();
     await loadConfigFromDB();
     console.log('Config cargada desde SQL Server.');
   } catch (e) {

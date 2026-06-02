@@ -47,8 +47,8 @@ app.use(session({
 
 // Static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
-// Serve logo and static assets from root project too
 app.use('/public', express.static(path.join(__dirname, '..')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'data', 'uploads')));
 
 // Branding middleware - inject config/branding into all views
 app.use(brandingMiddleware);
@@ -76,6 +76,7 @@ app.use('/actas', require('./routes/actas'));
 app.use('/reportes', require('./routes/reportes'));
 app.use('/permisos', require('./routes/permisos'));
 app.use('/inversiones', require('./routes/inversiones'));
+app.use('/equipos', require('./routes/equipos_asignados'));
 
 // Inicializar config desde SQL Server y arrancar
 const { initConfig } = require('./config/config');

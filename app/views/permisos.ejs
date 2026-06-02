@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Permisos &mdash; <%= branding.nombre %></title>
+<title>Permisos del Sistema &mdash; <%= branding.nombre %></title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
@@ -42,7 +42,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 
 /* Grupo card */
 .grupo-card{background:var(--bg-card);border-radius:10px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden;}
-.grupo-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;transition:background 0.15s;}
+.grupo-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;transition:background 0.15s;}
 .grupo-header:hover{background:var(--bg-hover);}
 .grupo-body{display:none;padding:16px;border-top:1px solid var(--border);}
 .grupo-body.open{display:block;}
@@ -127,11 +127,12 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
-    <div class="sub">Permisos y Notificaciones</div>
+    <div class="sub">Permisos del Sistema</div>
   </div>
   <a href="/" class="btn-back">&larr; Menú</a>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
     <a href="/logout" style="padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;">Salir</a>
   </div>
 </div>
@@ -153,7 +154,9 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <% if (nivelInfo.nivel <= 2) { %>
     <div class="tab" onclick="switchTab('configuracion')">&#9881; Configuración</div>
     <% } %>
+    <% if (nivelInfo.nivel <= 2) { %>
     <div class="tab" onclick="switchTab('notificaciones')">&#128276; Notificaciones</div>
+    <% } %>
   </div>
 
   <!-- Tab: Arbol -->
@@ -215,7 +218,8 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
   </div>
   <% } %>
 
-  <!-- Tab: Notificaciones -->
+  <!-- Tab: Notificaciones (solo N2) -->
+  <% if (nivelInfo.nivel <= 2) { %>
   <div class="tab-content" id="tab-notificaciones">
     <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">Define cómo se notifica a los usuarios sobre actas pendientes.</p>
     <div class="notif-card">
@@ -247,13 +251,20 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
       <span class="notif-status" style="background:rgba(0,123,255,0.1);color:#0056b3;">Próximamente</span>
     </div>
   </div>
+  <% } %>
+
+
 </div>
 
 <!-- Modal crear grupo -->
 <div class="modal-overlay" id="modal-grupo">
   <div class="modal">
     <h3 id="modal-grupo-titulo">Crear Grupo</h3>
-    <input type="text" id="input-grupo-nombre" placeholder="Nombre del grupo (ej: Planta Duracolor)">
+    <input type="text" id="input-grupo-nombre" placeholder="Nombre del grupo (ej: Manufactura)">
+    <label style="font-size:12px;color:var(--text-sub);display:block;margin:8px 0 4px;">Empresa</label>
+    <select id="select-grupo-empresa" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;">
+      <option value="">-- Sin empresa --</option>
+    </select>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cerrarModal('modal-grupo')">Cancelar</button>
       <button class="btn btn-primary" onclick="guardarGrupo()">Guardar</button>
@@ -265,10 +276,20 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="modal-overlay" id="modal-buscar">
   <div class="modal">
     <h3 id="modal-buscar-titulo">Buscar Usuario</h3>
-    <input type="text" id="input-buscar-user" placeholder="Escribe nombre o usuario..." oninput="buscarUsuarios()">
-    <div class="search-results" id="resultados-buscar"></div>
+    <div id="modal-buscar-search">
+      <input type="text" id="input-buscar-user" placeholder="Escribe nombre o usuario..." oninput="buscarUsuarios()">
+      <div class="search-results" id="resultados-buscar"></div>
+    </div>
+    <div id="modal-empresa-step" style="display:none;">
+      <div style="margin-bottom:8px;font-size:13px;color:var(--text-main);">Usuario: <strong id="empresa-step-nombre"></strong></div>
+      <label style="font-size:12px;color:var(--text-sub);display:block;margin-bottom:4px;">Empresa asignada</label>
+      <select id="select-empresa" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;">
+        <option value="">Cargando...</option>
+      </select>
+    </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cerrarModal('modal-buscar')">Cerrar</button>
+      <button class="btn btn-primary" id="btn-confirmar-empresa" style="display:none;" onclick="confirmarMiembroConEmpresa()">Confirmar</button>
     </div>
   </div>
 </div>
@@ -313,13 +334,29 @@ let arbol = { ti_usuarios: {}, grupos: {} };
 let buscarTimeout = null;
 let buscarContexto = { tipo: '', grupo_id: '' };
 let gruposAbiertos = new Set();
+let empresasAbiertas = new Set();
+let seccionesAbiertas = new Set();
 
 async function cargarArbol() {
   try {
-    const res = await fetch('/permisos/api/arbol');
-    arbol = await res.json();
+    const promises = [fetch('/permisos/api/arbol')];
+    if (NIVEL <= 2) promises.push(fetch('/permisos/api/sin-grupo'));
+    const [arbolRes, sgRes] = await Promise.all(promises);
+    arbol = await arbolRes.json();
+    _sgData = sgRes ? await sgRes.json() : null;
   } catch(e) { arbol = { ti_usuarios: {}, grupos: {} }; }
   renderArbol();
+}
+
+function empresaSigla(nombre) {
+  const n = (nombre || '').toUpperCase().replace(/\s+/g, '');
+  if (n.includes('DURACOLOR')) return 'DC';
+  if (n.includes('DURALUM')) return 'DUR';
+  if (n.includes('NAGSA')) return 'NG';
+  if (n.includes('PROALUM')) return 'PR';
+  if (n.includes('VETRIKO')) return 'VTK';
+  if (n.includes('WINDOWWORLD') || n.includes('WINDOW')) return 'WW';
+  return (nombre || '?').substring(0, 2).toUpperCase();
 }
 
 function renderArbol() {
@@ -365,7 +402,7 @@ function renderArbol() {
       }
     }
     html += '<button class="btn btn-primary" style="margin-top:8px;" onclick="abrirBuscar(\'ti\')">+ Agregar usuario TI</button>';
-    html += '</div>';
+    html += '</div>'; // section
   }
 
   // Seccion Grupos del sistema (Inversiones)
@@ -375,13 +412,10 @@ function renderArbol() {
   const gruposArea    = Object.entries(grupos).filter(([, g]) => !NOMBRES_SISTEMA.includes(g.nombre));
 
   if (NIVEL <= 2 && gruposSistema.length) {
-    html += '<div class="section">';
-    html += '<div class="section-title"><span style="font-size:16px;">&#128200;</span> Módulo Inversiones</div>';
     for (const [gid, grupo] of gruposSistema) html += renderGrupo(gid, grupo);
-    html += '</div>';
   }
 
-  // Seccion Grupos de área
+  // Seccion Grupos de área — agrupados por empresa
   html += '<div class="section">';
   html += '<div class="section-title"><span style="font-size:16px;">&#128101;</span> Grupos y Áreas (Nivel 3 y 4)</div>';
 
@@ -392,7 +426,81 @@ function renderArbol() {
       html += '<div class="card"><div class="empty">No tienes un grupo asignado.</div></div>';
     }
   } else {
-    for (const [gid, grupo] of gruposArea) html += renderGrupo(gid, grupo);
+    // Agrupar por empresa
+    const porEmpresa = {};
+    const sinEmpresa = [];
+    for (const [gid, grupo] of gruposArea) {
+      if (grupo.empresa) {
+        if (!porEmpresa[grupo.empresa]) porEmpresa[grupo.empresa] = [];
+        porEmpresa[grupo.empresa].push([gid, grupo]);
+      } else {
+        sinEmpresa.push([gid, grupo]);
+      }
+    }
+    // Renderizar por empresa (colapsable)
+    for (const [empresa, listaGrupos] of Object.entries(porEmpresa).sort()) {
+      const eid = 'emp-' + empresa.replace(/[^a-zA-Z0-9]/g, '_');
+      const abierta = empresasAbiertas.has(empresa);
+      const sigla = empresaSigla(empresa);
+      html += '<div style="margin-bottom:10px;">';
+      html += '<div onclick="toggleEmpresa(\'' + empresa.replace(/'/g, "\\'") + '\')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(var(--color-principal-rgb,224,88,22),0.35);background:rgba(var(--color-principal-rgb,224,88,22),0.05);margin-bottom:8px;user-select:none;">'
+        + '<div style="width:36px;height:36px;border-radius:8px;background:rgba(var(--color-principal-rgb,224,88,22),0.14);border:1px solid rgba(var(--color-principal-rgb,224,88,22),0.28);display:flex;align-items:center;justify-content:center;font-size:' + (sigla.length > 2 ? '9px' : '11px') + ';font-weight:800;color:var(--color-principal);flex-shrink:0;">' + sigla + '</div>'
+        + '<div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;">'
+        + '<span style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-main);">' + empresa + '</span>'
+        + '<span style="font-size:10px;color:var(--text-muted);">' + listaGrupos.length + ' grupo' + (listaGrupos.length !== 1 ? 's' : '') + '</span>'
+        + '</div>'
+        + '<span id="emp-arrow-' + eid + '" style="font-size:11px;color:var(--text-muted);transition:transform 0.2s;display:inline-block;transform:' + (abierta ? 'rotate(0deg)' : 'rotate(-90deg)') + '">&#9660;</span>'
+        + '</div>';
+      html += '<div id="' + eid + '" style="display:' + (abierta ? 'block' : 'none') + ';">';
+      // Sin grupo primero (colapsable)
+      if (NIVEL <= 2 && _sgData) {
+        const sgEmp = (_sgData.empresas || []).find(e => e.nombre.toLowerCase() === empresa.toLowerCase());
+        if (sgEmp && sgEmp.usuarios.length) html += sgColapsable(empresa, sgEmp.usuarios);
+      }
+      for (const [gid, grupo] of listaGrupos) html += renderGrupo(gid, grupo);
+      html += '</div></div>';
+    }
+    // Grupos sin empresa
+    if (sinEmpresa.length) {
+      if (Object.keys(porEmpresa).length) {
+        const eid = 'emp-__sin_empresa__';
+        const abierta = empresasAbiertas.has('__sin_empresa__');
+        html += '<div style="margin-bottom:10px;">';
+        html += '<div onclick="toggleEmpresa(\'__sin_empresa__\')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-hover);margin-bottom:8px;user-select:none;">'
+          + '<div style="width:36px;height:36px;border-radius:8px;background:var(--bg-dark3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">&#10067;</div>'
+          + '<div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;">'
+          + '<span style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-sub);">Sin empresa</span>'
+          + '<span style="font-size:10px;color:var(--text-muted);">' + sinEmpresa.length + ' grupo' + (sinEmpresa.length !== 1 ? 's' : '') + '</span>'
+          + '</div>'
+          + '<span id="emp-arrow-' + eid + '" style="font-size:11px;color:var(--text-muted);transition:transform 0.2s;display:inline-block;transform:' + (abierta ? 'rotate(0deg)' : 'rotate(-90deg)') + '">&#9660;</span>'
+          + '</div>';
+        html += '<div id="' + eid + '" style="display:' + (abierta ? 'block' : 'none') + ';">';
+        for (const [gid, grupo] of sinEmpresa) html += renderGrupo(gid, grupo);
+        html += '</div></div>';
+      } else {
+        for (const [gid, grupo] of sinEmpresa) html += renderGrupo(gid, grupo);
+      }
+    }
+  }
+
+  // OUs no reconocidos (sin empresa configurada)
+  if (NIVEL <= 2 && _sgData && (_sgData.sin_empresa || []).length) {
+    const sinEmpOUs = _sgData.sin_empresa;
+    const totalOU = sinEmpOUs.reduce((s, o) => s + o.usuarios.length, 0);
+    const seid = 'sg-sinempresa-ous';
+    html += '<div style="margin-bottom:8px;">';
+    html += '<div onclick="sgToggle(\'' + seid + '\')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);padding:7px 8px;border-radius:6px;border:1px dashed var(--border);margin-bottom:6px;user-select:none;">'
+      + '<span>&#128193; Sin empresa <span style="font-weight:400;opacity:0.7;">(' + totalOU + ' en OUs no reconocidos)</span></span><span>&#9660;</span></div>';
+    html += '<div id="' + seid + '" style="display:none;padding-left:12px;">';
+    for (const ouEntry of sinEmpOUs) {
+      const oeid = 'sg-ou-' + ouEntry.ou.replace(/[^a-zA-Z0-9]/g, '_');
+      html += '<div style="margin-bottom:6px;">';
+      html += '<div onclick="sgToggle(\'' + oeid + '\')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);padding:5px 8px;border-radius:4px;background:var(--bg-hover);margin-bottom:4px;user-select:none;">'
+        + '<span>OU: ' + ouEntry.ou + ' (' + ouEntry.usuarios.length + ')</span><span>&#9660;</span></div>';
+      html += '<div id="' + oeid + '" style="display:none;">' + sgUsuariosHtml(ouEntry.usuarios) + '</div>';
+      html += '</div>';
+    }
+    html += '</div></div>';
   }
 
   if (NIVEL <= 2) {
@@ -406,6 +514,14 @@ function renderArbol() {
     const body = document.getElementById('gbody-' + gid);
     if (body) body.classList.add('open');
   });
+  // N3: expandir todos los grupos automáticamente
+  if (NIVEL === 3) {
+    document.querySelectorAll('.grupo-body').forEach(b => {
+      b.classList.add('open');
+      const gid = b.id.replace('gbody-', '');
+      gruposAbiertos.add(gid);
+    });
+  }
 }
 
 function renderGrupo(gid, grupo) {
@@ -433,7 +549,7 @@ function renderGrupo(gid, grupo) {
     }
   }
   if (NIVEL <= 2) {
-    h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editarNombreGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Editar nombre">&#9998;</button>';
+    h += '<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editarNombreGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\',\'' + (grupo.empresa || '').replace(/'/g, "\\'") + '\')" title="Editar nombre">&#9998;</button>';
     if (!esGrupoSistema) h += '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();eliminarGrupo(\'' + gid + '\',\'' + (grupo.nombre || '').replace(/'/g, "\\'") + '\')" title="Eliminar grupo">&#128465;</button>';
   }
   h += '<span style="font-size:14px;color:var(--text-muted);transition:transform 0.2s;" id="arrow-' + gid + '">&#9660;</span>';
@@ -460,6 +576,7 @@ function renderGrupo(gid, grupo) {
 
   if (NIVEL <= 2) {
     const gi = grupo.inversiones || {};
+    const mv = grupo.modulos_visibles || {};
     const tieneInversiones = gi.puede_aprobar_cotizacion || gi.puede_aprobar_pago || gi.puede_marcar_pagado;
     if (tieneInversiones) {
       h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);">';
@@ -470,6 +587,22 @@ function renderGrupo(gid, grupo) {
       h += '<div class="sw-mini"><input type="checkbox" ' + (gi.puede_aprobar_pago ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'puede_aprobar_pago\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
       h += '<div class="perm-row"><span class="perm-label">Marcar como pagado <span style="font-size:10px;color:var(--text-muted);">(contadora)</span></span>';
       h += '<div class="sw-mini"><input type="checkbox" ' + (gi.puede_marcar_pagado ? 'checked' : '') + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'puede_marcar_pagado\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+      h += '</div>';
+      h += '<div style="margin-bottom:16px;padding:12px;border-radius:8px;background:rgba(100,116,139,0.06);border:1px solid rgba(100,116,139,0.2);">';
+      h += '<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-sub);margin-bottom:10px;">&#128274; Módulos visibles</div>';
+      h += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;">Por defecto este grupo solo ve Inversiones. Activa módulos adicionales si necesitan acceso.</div>';
+      const modList = [
+        { key: 'ver_actas', label: 'Actas' },
+        { key: 'ver_etiquetas', label: 'Etiquetas' },
+        { key: 'ver_inversiones', label: 'Inversiones' },
+        { key: 'ver_reportes', label: 'Reportes' },
+        { key: 'ver_permisos', label: 'Permisos' },
+      ];
+      for (const m of modList) {
+        const checked = mv[m.key.replace('ver_', '')] ? 'checked' : '';
+        h += '<div class="perm-row"><span class="perm-label">' + m.label + '</span>';
+        h += '<div class="sw-mini"><input type="checkbox" ' + checked + ' onchange="cambiarPermGrupo(\'' + gid + '\',\'' + m.key + '\',this.checked)"><div class="track"></div><div class="knob"></div></div></div>';
+      }
       h += '</div>';
     } else {
       h += '<div style="margin-bottom:12px;"><button onclick="habilitarInversiones(\'' + gid + '\')" style="background:none;border:none;color:var(--text-muted);font-size:11px;cursor:pointer;padding:0;">+ Asignar rol de Inversiones</button></div>';
@@ -502,13 +635,17 @@ function renderGrupo(gid, grupo) {
   if (miembros.length === 0) {
     h += '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">Sin miembros</div>';
   } else {
+    const esContadora = !!(grupo.inversiones && grupo.inversiones.puede_marcar_pagado);
     for (const m of miembros) {
       const mUser = typeof m === 'string' ? m : m.username;
       const mNombre = typeof m === 'string' ? m : (m.nombre || m.username);
+      const mEmpresa = (typeof m === 'object' && m.empresa) ? m.empresa : null;
       h += '<div class="tree-item"><div class="info"><span style="font-size:14px;">&#128100;</span>';
-      h += '<div><div class="name">' + mNombre + '</div><div class="detail">' + mUser + '</div></div>';
+      h += '<div><div class="name">' + mNombre + '</div>';
+      h += '<div class="detail">' + mUser + (esContadora && mEmpresa ? ' &mdash; ' + mEmpresa : '') + '</div></div>';
       h += '</div>';
       h += '<div style="display:flex;align-items:center;gap:6px;">';
+      if (esContadora && !mEmpresa && NIVEL <= 2) h += '<span style="font-size:11px;color:var(--color-warning,#f59e0b);">Sin empresa</span>';
       h += '<span class="badge badge-user">' + labelMiembro + '</span>';
       if (NIVEL <= 2) h += '<button class="btn btn-danger btn-sm" onclick="quitarMiembro(\'' + gid + '\',\'' + mUser + '\',\'' + mNombre.replace(/'/g, "\\'") + '\')">Quitar</button>';
       h += '</div></div>';
@@ -528,9 +665,43 @@ function toggleGrupo(gid) {
   else gruposAbiertos.delete(gid);
 }
 
+function toggleSeccion(id) {
+  const body = document.getElementById('sec-body-' + id);
+  const arrow = document.getElementById('sec-arrow-' + id);
+  if (!body) return;
+  const visible = body.style.display !== 'none';
+  body.style.display = visible ? 'none' : 'block';
+  if (arrow) arrow.style.transform = visible ? 'rotate(-90deg)' : 'rotate(0deg)';
+  if (visible) seccionesAbiertas.delete(id);
+  else seccionesAbiertas.add(id);
+}
+
+function toggleEmpresa(empresa) {
+  const eid = 'emp-' + empresa.replace(/[^a-zA-Z0-9]/g, '_');
+  const body = document.getElementById(eid);
+  const arrow = document.getElementById('emp-arrow-' + eid);
+  if (!body) return;
+  const visible = body.style.display !== 'none';
+  body.style.display = visible ? 'none' : 'block';
+  if (arrow) arrow.style.transform = visible ? 'rotate(-90deg)' : 'rotate(0deg)';
+  if (visible) empresasAbiertas.delete(empresa);
+  else empresasAbiertas.add(empresa);
+}
+
 // Modales
-function abrirModalGrupo() {
+async function abrirModalGrupo() {
   document.getElementById('input-grupo-nombre').value = '';
+  const sel = document.getElementById('select-grupo-empresa');
+  sel.innerHTML = '<option value="">-- Sin empresa --</option>';
+  try {
+    const res = await fetch('/permisos/api/glpi-entidades');
+    const entidades = await res.json();
+    entidades.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.nombre; opt.textContent = e.nombre;
+      sel.appendChild(opt);
+    });
+  } catch {}
   document.getElementById('modal-grupo').classList.add('show');
   setTimeout(() => document.getElementById('input-grupo-nombre').focus(), 100);
 }
@@ -542,9 +713,10 @@ function cerrarModal(id) {
 async function guardarGrupo() {
   const nombre = document.getElementById('input-grupo-nombre').value.trim();
   if (!nombre) return;
+  const empresa = document.getElementById('select-grupo-empresa').value || null;
   await fetch('/permisos/api/grupo/crear', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre }),
+    body: JSON.stringify({ nombre, empresa }),
   });
   cerrarModal('modal-grupo');
   toast('Grupo creado');
@@ -570,8 +742,42 @@ function abrirBuscar(tipo, grupoId) {
   document.getElementById('input-buscar-user').value = '';
   document.getElementById('resultados-buscar').innerHTML = '';
   document.getElementById('resultados-buscar').classList.remove('show');
+  document.getElementById('modal-buscar-search').style.display = '';
+  document.getElementById('modal-empresa-step').style.display = 'none';
+  document.getElementById('btn-confirmar-empresa').style.display = 'none';
   document.getElementById('modal-buscar').classList.add('show');
   setTimeout(() => document.getElementById('input-buscar-user').focus(), 100);
+}
+
+let pendienteMiembro = null;
+
+async function seleccionarMiembroContadora(username, nombre) {
+  pendienteMiembro = { username, nombre };
+  document.getElementById('modal-buscar-search').style.display = 'none';
+  document.getElementById('empresa-step-nombre').textContent = nombre || username;
+  document.getElementById('modal-empresa-step').style.display = '';
+  document.getElementById('btn-confirmar-empresa').style.display = '';
+  const sel = document.getElementById('select-empresa');
+  sel.innerHTML = '<option value="">Cargando...</option>';
+  try {
+    const res = await fetch('/permisos/api/glpi-entidades');
+    const entidades = await res.json();
+    sel.innerHTML = '<option value="">-- Seleccionar empresa --</option>' +
+      entidades.map(e => '<option value="' + e.nombre + '">' + e.nombre + '</option>').join('');
+  } catch { sel.innerHTML = '<option value="">Error al cargar</option>'; }
+}
+
+async function confirmarMiembroConEmpresa() {
+  const empresa = document.getElementById('select-empresa').value;
+  if (!empresa) { toast('Selecciona una empresa'); return; }
+  const ctx = buscarContexto;
+  await fetch('/permisos/api/grupo/miembro', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ grupo_id: ctx.grupo_id, username: pendienteMiembro.username, nombre: pendienteMiembro.nombre, empresa }),
+  });
+  cerrarModal('modal-buscar');
+  toast('Usuario asignado');
+  cargarArbol();
 }
 
 function buscarUsuarios() {
@@ -637,6 +843,12 @@ async function seleccionarUsuario(username, nombre) {
       body: JSON.stringify({ grupo_id: ctx.grupo_id, username, nombre }),
     });
   } else if (ctx.tipo === 'miembro') {
+    const grupo = arbol.grupos[ctx.grupo_id] || {};
+    const esContadora = !!(grupo.inversiones && grupo.inversiones.puede_marcar_pagado);
+    if (esContadora) {
+      seleccionarMiembroContadora(username, nombre);
+      return;
+    }
     await fetch('/permisos/api/grupo/miembro', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ grupo_id: ctx.grupo_id, username, nombre }),
@@ -701,22 +913,35 @@ function quitarJefe(gid, username, nombre) {
   });
 }
 
-function editarNombreGrupo(gid, nombreActual) {
+async function editarNombreGrupo(gid, nombreActual, empresaActual) {
   document.getElementById('input-grupo-nombre').value = nombreActual;
   document.getElementById('modal-grupo-titulo').textContent = 'Editar Grupo';
+  // Cargar empresas en el dropdown
+  const sel = document.getElementById('select-grupo-empresa');
+  sel.innerHTML = '<option value="">-- Sin empresa --</option>';
+  try {
+    const resp = await fetch('/permisos/api/glpi-entidades');
+    const entidades = await resp.json();
+    entidades.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.nombre; opt.textContent = e.nombre;
+      if (e.nombre === empresaActual) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  } catch {}
+  if (empresaActual) sel.value = empresaActual;
   document.getElementById('modal-grupo').classList.add('show');
-  // Cambiar temporalmente el onclick del boton guardar
   const btnGuardar = document.querySelector('#modal-grupo .btn-primary');
   btnGuardar.onclick = async function() {
     const nombre = document.getElementById('input-grupo-nombre').value.trim();
     if (!nombre) return;
+    const empresa = document.getElementById('select-grupo-empresa').value || null;
     await fetch('/permisos/api/grupo/editar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grupo_id: gid, nombre }),
+      body: JSON.stringify({ grupo_id: gid, nombre, empresa }),
     });
     cerrarModal('modal-grupo');
     toast('Grupo actualizado');
-    // Restaurar onclick original
     btnGuardar.onclick = function() { guardarGrupo(); };
     document.getElementById('modal-grupo-titulo').textContent = 'Crear Grupo';
     cargarArbol();
@@ -764,6 +989,97 @@ function switchTab(tab) {
   tabs.forEach(t => { if (t.textContent.includes(nombres[tab] || '')) t.classList.add('active'); });
   if (tab === 'modulos' && !todosUsuarios.length) cargarTablaUsuarios();
   if (tab === 'configuracion') cargarMotivos();
+}
+
+// Sin grupo — helpers usados por renderArbol()
+let _sgData = null;
+
+function sgToggle(id) {
+  const b = document.getElementById(id);
+  if (b) b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+function sgColapsable(empresa, usuarios) {
+  const bid = 'sg-body-' + empresa.replace(/[^a-zA-Z0-9]/g, '_');
+
+  // Todos los grupos de todas las empresas, agrupados con optgroup (excluye sistema)
+  const SISTEMA = ['Gerencia', 'Contadora'];
+  const porEmp = {};
+  for (const [gid, g] of Object.entries(arbol.grupos || {})) {
+    if (SISTEMA.includes(g.nombre)) continue;
+    const e = g.empresa || 'Sin empresa';
+    if (!porEmp[e]) porEmp[e] = [];
+    porEmp[e].push({ gid, nombre: g.nombre });
+  }
+  let optsHtml = '<option value="">— seleccionar grupo —</option>';
+  for (const [emp, gs] of Object.entries(porEmp).sort()) {
+    optsHtml += '<optgroup label="' + emp + '">';
+    for (const g of gs) optsHtml += '<option value="' + g.gid + '">' + g.nombre + '</option>';
+    optsHtml += '</optgroup>';
+  }
+  const hayGrupos = Object.keys(porEmp).length > 0;
+
+  let h = '<div class="grupo-card" style="border-left:3px solid #e65100;margin-bottom:8px;">';
+  h += '<div class="grupo-header" onclick="sgToggle(\'' + bid + '\')" style="background:rgba(230,81,0,0.05);gap:12px;">';
+  h += '<span style="font-size:16px;">&#9888;</span>';
+  h += '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#e65100;">Sin grupo asignado</div>';
+  h += '<div style="font-size:11px;color:var(--text-muted);">' + usuarios.length + ' usuario(s) pendiente(s)</div></div>';
+  h += '<span style="font-size:12px;font-weight:800;color:#fff;background:#e65100;border-radius:12px;padding:2px 9px;margin-right:8px;">' + usuarios.length + '</span>';
+  h += '<span style="font-size:11px;color:var(--text-muted);">&#9660;</span>';
+  h += '</div>';
+
+  h += '<div id="' + bid + '" style="display:none;border-top:1px solid rgba(230,81,0,0.2);">';
+  for (const u of usuarios) {
+    const uid = 'sg-u-' + u.username.replace(/[^a-zA-Z0-9]/g, '_');
+    h += '<div id="' + uid + '" style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;">';
+    h += '<div style="width:32px;height:32px;border-radius:50%;background:rgba(230,81,0,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">&#128100;</div>';
+    h += '<div style="flex:1;min-width:120px;">';
+    h += '<div style="font-size:12px;font-weight:700;color:var(--text-main);">' + (u.nombre || '—') + '</div>';
+    h += '<div style="font-size:10px;color:var(--text-muted);font-family:monospace;">' + u.username + '</div>';
+    h += '</div>';
+    if (hayGrupos) {
+      h += '<select id="sel-' + uid + '" style="padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:11px;outline:none;max-width:200px;">' + optsHtml + '</select>';
+      h += '<select id="rol-' + uid + '" style="padding:5px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:11px;outline:none;width:88px;">'
+        + '<option value="miembro">Miembro</option><option value="jefe">Jefe</option></select>';
+      h += '<button class="btn btn-primary btn-sm" onclick="sgAsignar(\'' + u.username + '\',\'' + (u.nombre||u.username).replace(/'/g,"\\'") + '\',\'' + empresa.replace(/'/g,"\\'") + '\',\'' + uid + '\')">Asignar</button>';
+    } else {
+      h += '<span style="font-size:11px;color:var(--text-muted);font-style:italic;">Sin grupos creados</span>';
+    }
+    h += '</div>';
+  }
+  h += '</div></div>';
+  return h;
+}
+
+async function sgAsignar(username, nombre, empresa, uid) {
+  const sel = document.getElementById('sel-' + uid);
+  const rol = document.getElementById('rol-' + uid);
+  if (!sel || !sel.value) { toast('Selecciona un grupo', 'error'); return; }
+  const grupo_id = sel.value;
+  const esJefe = rol && rol.value === 'jefe';
+  const endpoint = esJefe ? '/permisos/api/grupo/agregar-jefe' : '/permisos/api/grupo/miembro';
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ grupo_id, username, nombre, empresa }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    toast(nombre + ' asignado como ' + (esJefe ? 'Jefe' : 'Miembro'));
+    cargarArbol();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+function sgUsuariosHtml(usuarios) {
+  let h = '<div style="padding:8px 0;">';
+  for (const u of usuarios) {
+    h += '<div style="display:flex;gap:10px;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid var(--border);">'
+      + '<span style="font-size:14px;">&#128100;</span>'
+      + '<span style="font-weight:600;color:var(--text-main);flex:1;">' + (u.nombre || '—') + '</span>'
+      + '<span style="color:var(--text-muted);font-family:monospace;font-size:11px;">' + u.username + '</span>'
+      + '</div>';
+  }
+  h += '</div>';
+  return h;
 }
 
 // Motivos de salida

@@ -32,11 +32,12 @@ textarea{resize:vertical;min-height:90px;}
 <body>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
-    <img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;">
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
     <div><div style="font-weight:700;font-size:14px;">Nueva Solicitud</div><div class="sub">Inversiones</div></div>
   </div>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
     <a href="/inversiones" class="btn-back">&larr; Volver</a>
     <a href="/logout" class="btn-logout">Salir</a>
   </div>
@@ -53,16 +54,33 @@ textarea{resize:vertical;min-height:90px;}
 
     <form id="formNueva">
       <div class="form-group">
-        <label>Descripción del equipo / artículo *</label>
-        <input type="text" name="descripcion" placeholder="Ej: Laptop Dell Latitude 15, 16GB RAM, 512GB SSD" required>
+        <label>Equipos / artículos *</label>
+        <div id="cat-loading" style="font-size:12px;color:var(--text-muted);padding:8px 0;">Cargando catálogo...</div>
+        <table id="tblItems" style="width:100%;border-collapse:collapse;margin-bottom:8px;display:none;">
+          <thead>
+            <tr>
+              <th style="text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);padding:4px 6px;border-bottom:1px solid var(--border);">Categoría / Artículo</th>
+              <th style="text-align:center;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--text-muted);padding:4px 6px;border-bottom:1px solid var(--border);width:80px;">Cant.</th>
+              <th style="width:36px;border-bottom:1px solid var(--border);"></th>
+            </tr>
+          </thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+        <button type="button" id="btn-agregar" onclick="agregarItem()" style="display:none;padding:6px 14px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-sub);font-size:12px;font-weight:700;cursor:pointer;">+ Agregar ítem</button>
       </div>
       <div class="form-group">
         <label>Justificación</label>
-        <textarea name="justificacion" placeholder="¿Por qué se necesita esta compra?"></textarea>
+        <textarea name="justificacion" placeholder="Describa el motivo de la solicitud, el estado actual del equipo o artículo, el nivel de urgencia y cualquier especificación técnica o de marca que considere necesaria." rows="4"></textarea>
       </div>
       <div class="form-group">
-        <label>Observaciones</label>
-        <textarea name="observaciones" placeholder="Información adicional, urgencia, especificaciones..." rows="3"></textarea>
+        <label>Fotos del artículo dañado <span style="font-weight:400;text-transform:none;font-size:10px;color:var(--text-muted);">(opcional, máx. 5)</span></label>
+        <input type="file" id="inputAdjunto" name="solicitud_adjuntos" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button type="button" onclick="document.getElementById('inputAdjunto').click()" style="padding:8px 16px;border-radius:7px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-sub);font-size:12px;font-weight:700;cursor:pointer;">&#128247; Seleccionar fotos</button>
+          <div style="padding:8px 16px;border:1.5px dashed var(--border);border-radius:7px;font-size:12px;color:var(--text-muted);">o pega con <strong>Ctrl+V</strong></div>
+        </div>
+        <div id="previewsAdjunto" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Imágenes o PDF. Máx. 10 MB por archivo.</div>
       </div>
       <div class="btn-row">
         <button type="submit" class="btn-primary">Enviar Solicitud</button>
@@ -73,29 +91,135 @@ textarea{resize:vertical;min-height:90px;}
 </div>
 
 <script>
+let _catalogo = [];
+
+async function cargarCatalogo() {
+  try {
+    const r = await fetch('/inversiones/api/catalogo');
+    const items = await r.json();
+    _catalogo = items.filter(i => i.activo);
+    document.getElementById('cat-loading').style.display = 'none';
+    document.getElementById('tblItems').style.display = '';
+    document.getElementById('btn-agregar').style.display = '';
+    agregarItem();
+  } catch(e) {
+    document.getElementById('cat-loading').textContent = 'Error al cargar el catálogo. Contacta a TI.';
+  }
+}
+
+function agregarItem() {
+  const tbody = document.getElementById('itemsBody');
+  const cats = [...new Set(_catalogo.map(a => a.categoria))].sort();
+  const opts = cats.map(cat => {
+    const items = _catalogo.filter(a => a.categoria === cat);
+    return `<optgroup label="${cat}">${items.map(a => `<option value="${a.nombre}">${a.nombre}</option>`).join('')}</optgroup>`;
+  }).join('');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="padding:4px 6px;">
+      <select class="item-desc" style="width:100%;padding:7px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;font-family:inherit;">
+        <option value="">— Seleccionar artículo —</option>
+        ${opts}
+      </select>
+    </td>
+    <td style="padding:4px 6px;text-align:center;">
+      <input type="number" class="item-cant" min="1" value="1" style="width:70px;padding:7px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-input);color:var(--text-main);font-size:13px;text-align:center;font-family:inherit;">
+    </td>
+    <td style="padding:4px 6px;text-align:center;">
+      <button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:var(--text-muted);font-size:16px;cursor:pointer;line-height:1;" title="Quitar">&times;</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+cargarCatalogo();
+
+// Lista de archivos adjuntos (DataTransfer para input múltiple)
+const adjuntoDT = new DataTransfer();
+
+function renderPreviews() {
+  const container = document.getElementById('previewsAdjunto');
+  container.innerHTML = '';
+  Array.from(adjuntoDT.files).forEach((file, i) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;display:inline-block;';
+    if (file.type.startsWith('image/')) {
+      const url = URL.createObjectURL(file);
+      wrap.innerHTML = `<img src="${url}" style="height:80px;width:80px;object-fit:cover;border-radius:7px;border:1px solid var(--border);">`;
+    } else {
+      wrap.innerHTML = `<div style="height:80px;width:80px;display:flex;align-items:center;justify-content:center;background:var(--bg-dark2);border-radius:7px;border:1px solid var(--border);font-size:11px;color:var(--text-sub);text-align:center;padding:4px;">&#128196;<br>${file.name.substring(0,12)}</div>`;
+    }
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.innerHTML = '&times;';
+    btn.title = 'Quitar';
+    btn.style.cssText = 'position:absolute;top:-6px;right:-6px;background:#dc3545;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+    btn.onclick = () => quitarAdjunto(i);
+    wrap.appendChild(btn);
+    container.appendChild(wrap);
+  });
+  // Sincronizar con el input
+  document.getElementById('inputAdjunto').files = adjuntoDT.files;
+}
+
+function agregarArchivos(files) {
+  for (const file of Array.from(files)) {
+    if (adjuntoDT.files.length >= 5) { toast('Máximo 5 archivos', 'error'); break; }
+    adjuntoDT.items.add(file);
+  }
+  renderPreviews();
+}
+
+function quitarAdjunto(idx) {
+  const nueva = new DataTransfer();
+  Array.from(adjuntoDT.files).forEach((f, i) => { if (i !== idx) nueva.items.add(f); });
+  adjuntoDT.items.clear();
+  Array.from(nueva.files).forEach(f => adjuntoDT.items.add(f));
+  renderPreviews();
+}
+
+document.getElementById('inputAdjunto').addEventListener('change', function() {
+  agregarArchivos(this.files);
+  this.value = '';
+});
+
+document.addEventListener('paste', (e) => {
+  const items = Array.from(e.clipboardData.items || []);
+  const imgItem = items.find(i => i.type.startsWith('image/'));
+  if (!imgItem) return;
+  const file = imgItem.getAsFile();
+  if (!file) return;
+  const named = new File([file], `captura-${Date.now()}.png`, { type: file.type });
+  agregarArchivos([named]);
+});
+
 document.getElementById('formNueva').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
-  const data = Object.fromEntries(new FormData(form));
+  const items = Array.from(document.querySelectorAll('#itemsBody tr')).map(tr => {
+    const descripcion = (tr.querySelector('.item-desc').value || '').trim();
+    return { descripcion, cantidad: parseInt(tr.querySelector('.item-cant').value) || 1 };
+  }).filter(i => i.descripcion);
+
+  if (!items.length) { toast('Selecciona al menos un artículo del catálogo', 'error'); return; }
+
+  const fd = new FormData(form);
+  fd.append('items', JSON.stringify(items));
+
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.textContent = 'Enviando...';
   try {
-    const r = await fetch('/inversiones/nueva', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    const r = await fetch('/inversiones/nueva', { method: 'POST', body: fd });
     const res = await r.json();
     if (res.ok) {
       window.location.href = '/inversiones';
     } else {
-      alert(res.error || 'Error al enviar');
+      toast(res.error || 'Error al enviar', 'error');
       btn.disabled = false;
       btn.textContent = 'Enviar Solicitud';
     }
   } catch {
-    alert('Error de conexión');
+    toast('Error de conexión', 'error');
     btn.disabled = false;
     btn.textContent = 'Enviar Solicitud';
   }

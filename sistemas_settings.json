@@ -38,8 +38,9 @@
         "etiquetas": "activo",
         "actas": "activo",
         "reportes": "activo",
-        "inversiones": "deshabilitado",
-        "permisos": "pruebas"
+        "inversiones": "activo",
+        "permisos": "activo",
+        "equipos_asignados": "activo"
     },
     "active_directory": {
         "modo": "automatica",
@@ -49,7 +50,9 @@
         "puerto": 389,
         "dominio": "",
         "base_dn": "",
-        "sufijo_usuario": ""
+        "sufijo_usuario": "",
+        "bind_dn": "CN=Administrador,CN=Users,DC=DURAN,DC=GRUPONAGSA,DC=EC",
+        "bind_password": "M853@UYT"
     },
     "permisos_config": {
         "ti_usuarios": {
@@ -77,6 +80,7 @@
         "grupos": {
             "1": {
                 "nombre": "Manufactura",
+                "empresa": "Duracolor",
                 "jefes": [
                     {
                         "username": "exar.lamota",
@@ -94,7 +98,8 @@
                 "miembros": [
                     {
                         "username": "dc.mecanizado",
-                        "nombre": "dc.mecanizado"
+                        "nombre": "dc.mecanizado",
+                        "empresa": null
                     }
                 ],
                 "permisos": {
@@ -106,10 +111,18 @@
                     "puede_aprobar_cotizacion": false,
                     "puede_aprobar_pago": false,
                     "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
                 }
             },
             "2": {
                 "nombre": "Pintura",
+                "empresa": "Duracolor",
                 "jefes": [
                     {
                         "username": "luis.haro",
@@ -126,19 +139,39 @@
                     "puede_aprobar_cotizacion": false,
                     "puede_aprobar_pago": false,
                     "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
                 }
             },
             "4": {
                 "nombre": "Gerencia",
+                "empresa": null,
                 "jefes": [],
                 "miembros": [
                     {
                         "username": "gonzalo.kozhaya",
-                        "nombre": "Gonzalo Kozhaya"
+                        "nombre": "Gonzalo Kozhaya",
+                        "empresa": null
                     },
                     {
                         "username": "andrea.kozhaya",
-                        "nombre": "Andrea Kozhaya"
+                        "nombre": "Andrea Kozhaya",
+                        "empresa": null
+                    },
+                    {
+                        "username": "andres.kozhaya",
+                        "nombre": "Andres Kozhaya",
+                        "empresa": null
+                    },
+                    {
+                        "username": "ignacio.kozhaya",
+                        "nombre": "Ignacio Kozhaya",
+                        "empresa": null
                     }
                 ],
                 "permisos": {
@@ -150,10 +183,102 @@
                     "puede_aprobar_cotizacion": true,
                     "puede_aprobar_pago": true,
                     "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": true,
+                    "etiquetas": false,
+                    "inversiones": true,
+                    "reportes": true,
+                    "permisos": false
                 }
             },
             "5": {
                 "nombre": "Contadora",
+                "empresa": null,
+                "jefes": [],
+                "miembros": [
+                    {
+                        "username": "cinthya.cheve",
+                        "nombre": "Cinthya Cheve",
+                        "empresa": "WindowWorld"
+                    },
+                    {
+                        "username": "maythe.pincay",
+                        "nombre": "Maythe Pincay",
+                        "empresa": "WindowWorld"
+                    },
+                    {
+                        "username": "margarita.vargas",
+                        "nombre": "Margarita Vargas",
+                        "empresa": "Vetriko"
+                    },
+                    {
+                        "username": "jamilet.zambrano",
+                        "nombre": "Jamilet Zambrano",
+                        "empresa": "Vetriko"
+                    },
+                    {
+                        "username": "roxanna.farfan",
+                        "nombre": "Roxana Farfan",
+                        "empresa": "Proalum"
+                    },
+                    {
+                        "username": "jonathan.flores",
+                        "nombre": "Jonathan Flores",
+                        "empresa": "Proalum"
+                    },
+                    {
+                        "username": "betsy.yagual",
+                        "nombre": "Betsy Yagual",
+                        "empresa": "Duralum"
+                    },
+                    {
+                        "username": "andrea.parrales",
+                        "nombre": "Andrea Parrales",
+                        "empresa": "Duracolor"
+                    },
+                    {
+                        "username": "raisa.benitez",
+                        "nombre": "Raisa Benitez",
+                        "empresa": "Duracolor"
+                    },
+                    {
+                        "username": "adriana.giler",
+                        "nombre": "Adriana Giler",
+                        "empresa": "Duracolor"
+                    },
+                    {
+                        "username": "veronica.santos",
+                        "nombre": "Veronica Santos",
+                        "empresa": "Nagsa"
+                    },
+                    {
+                        "username": "johanna.munoz",
+                        "nombre": "Johanna Muñoz DURALUM",
+                        "empresa": "Duralum"
+                    }
+                ],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": true
+                },
+                "modulos_visibles": {
+                    "actas": true,
+                    "etiquetas": false,
+                    "inversiones": true,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "6": {
+                "nombre": "Oficina",
+                "empresa": "Vetriko",
                 "jefes": [],
                 "miembros": [],
                 "permisos": {
@@ -164,7 +289,129 @@
                 "inversiones": {
                     "puede_aprobar_cotizacion": false,
                     "puede_aprobar_pago": false,
-                    "puede_marcar_pagado": true
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "7": {
+                "nombre": "Oficina",
+                "empresa": "WindowWorld",
+                "jefes": [],
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "8": {
+                "nombre": "Oficina",
+                "empresa": "Proalum",
+                "jefes": [],
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "9": {
+                "nombre": "Oficina",
+                "empresa": "Duralum",
+                "jefes": [],
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "10": {
+                "nombre": "Oficina",
+                "empresa": "Nagsa",
+                "jefes": [],
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
+                }
+            },
+            "11": {
+                "nombre": "Planta",
+                "empresa": "Vetriko",
+                "jefes": [],
+                "miembros": [],
+                "permisos": {
+                    "actas": true,
+                    "reportes": true,
+                    "crear_entrega": false
+                },
+                "inversiones": {
+                    "puede_aprobar_cotizacion": false,
+                    "puede_aprobar_pago": false,
+                    "puede_marcar_pagado": false
+                },
+                "modulos_visibles": {
+                    "actas": false,
+                    "etiquetas": false,
+                    "inversiones": false,
+                    "reportes": false,
+                    "permisos": false
                 }
             }
         },

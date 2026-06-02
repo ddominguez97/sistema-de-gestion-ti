@@ -109,10 +109,15 @@ async function resolveADConfig(manualCfg) {
   const modo = (manualCfg && manualCfg.modo) || 'automatica';
 
   if (modo === 'automatica') {
-    // Leer LDAP desde la BD de GLPI
     try {
       const glpiLdap = await getGLPILdapConfig();
-      if (glpiLdap) return glpiLdap;
+      if (glpiLdap) {
+        // rootdn_passwd en GLPI está cifrado con la clave GLPI — si el app config
+        // tiene bind_dn/bind_password en texto plano, usarlos como override
+        if (manualCfg && manualCfg.bind_dn) glpiLdap.bind_dn = manualCfg.bind_dn;
+        if (manualCfg && manualCfg.bind_password) glpiLdap.bind_password = manualCfg.bind_password;
+        return glpiLdap;
+      }
     } catch {}
     return null;
   }
@@ -262,15 +267,23 @@ function checkModulo(cfg, modulo, req) {
   const estado = (cfg.modulos && cfg.modulos[modulo]) || 'activo';
   if (estado === 'activo') return null;
   if (estado === 'pruebas' && req.session) {
-    // Admin del panel
     if (req.session.admin_ok) return null;
-    // Usuario autenticado via GLPI (superadmin/TI)
     if (req.session.nagsa_auth === 'glpi') return null;
-    // N2 (TI) o N3 con permiso explicito
     const info = getNivelUsuario(cfg, req);
     if (info.nivel <= 2) return null;
     const perms = getPermisosUsuario(cfg, req);
     if (perms[modulo]) return null;
+    // Grupos con rol de inversiones pueden acceder al módulo inversiones
+    if (modulo === 'inversiones') {
+      const user = (req.session.nagsa_user || '').toLowerCase();
+      const pc = cfg.permisos_config || {};
+      for (const g of Object.values(pc.grupos || {})) {
+        const enGrupo = [...(g.jefes || []), ...(g.miembros || [])].some(u => u.username.toLowerCase() === user);
+        if (!enGrupo) continue;
+        const inv = g.inversiones || {};
+        if (inv.puede_aprobar_cotizacion || inv.puede_aprobar_pago || inv.puede_marcar_pagado) return null;
+      }
+    }
   }
   return estado;
 }
@@ -344,7 +357,7 @@ function getPermisosUsuario(cfg, req) {
       const gPerms = grupo.permisos || {};
       const inv = grupo.inversiones || {};
       if (inv.puede_aprobar_cotizacion || inv.puede_aprobar_pago || inv.puede_marcar_pagado) {
-        return { etiquetas: false, actas: true, reportes: true, permisos: false, inversiones: true };
+        return { etiquetas: false, actas: false, reportes: false, permisos: false, inversiones: true };
       }
       return {
         etiquetas: false, inversiones: false,

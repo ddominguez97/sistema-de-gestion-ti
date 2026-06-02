@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Equipos &mdash; <%= branding.nombre %></title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
+.topbar{background:var(--bg-card);border-bottom:2px solid var(--color-principal);padding:14px 28px;display:flex;align-items:center;gap:16px;}
+.topbar .sub{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.topbar .user{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--text-sub);}
+.topbar a.btn-back{padding:6px 14px;border-radius:6px;background:var(--bg-hover);color:var(--text-sub);font-size:11px;font-weight:700;text-decoration:none;border:1px solid var(--border);}
+.topbar a.btn-logout{padding:6px 14px;border-radius:6px;background:var(--color-principal);color:#fff;font-size:11px;font-weight:700;text-decoration:none;}
+.container{max-width:1200px;margin:30px auto;padding:0 20px;}
+.section-title{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--color-principal);margin-bottom:16px;}
+
+/* Outer tabs */
+.outer-tabs{display:flex;gap:4px;border-bottom:3px solid var(--color-principal);margin-bottom:0;}
+.outer-tab-btn{padding:11px 26px;font-size:13px;font-weight:700;background:var(--bg-dark3);border:1px solid var(--border);border-bottom:none;cursor:pointer;color:var(--text-muted);border-radius:8px 8px 0 0;transition:all 0.15s;margin-bottom:-3px;}
+.outer-tab-btn.active{background:var(--color-principal);color:#fff;border-color:var(--color-principal);}
+.outer-tab-btn:hover:not(.active){color:var(--text-main);background:var(--bg-hover);}
+.outer-panel{display:none;padding:24px 0;}
+.outer-panel.active{display:block;}
+
+/* Inner tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:24px;}
+.tab-btn{padding:10px 22px;font-size:12px;font-weight:700;color:var(--text-muted);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;display:flex;align-items:center;gap:8px;}
+.tab-btn:hover{color:var(--text-main);}
+.tab-btn.active{color:var(--color-principal);border-bottom-color:var(--color-principal);}
+.tab-badge{background:var(--bg-hover);border:1px solid var(--border2);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:800;color:var(--text-sub);}
+.tab-btn.active .tab-badge{background:rgba(0,0,0,0.08);color:var(--color-principal);border-color:var(--color-principal);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;}
+.filter-bar input{flex:1;padding:9px 14px;border-radius:7px;border:1.5px solid var(--border2);background:var(--bg-input);color:var(--text-main);font-size:13px;outline:none;max-width:360px;}
+.filter-bar input:focus{border-color:var(--color-principal);}
+.filter-count{font-size:12px;color:var(--text-muted);margin-left:auto;}
+
+/* Empresa section */
+.empresa-section{margin-bottom:12px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.empresa-header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-dark3);cursor:pointer;user-select:none;border-bottom:1px solid transparent;transition:background 0.12s;}
+.empresa-header:hover{background:var(--bg-hover);}
+.empresa-section.open .empresa-header{border-bottom-color:var(--border);}
+.empresa-icon{width:36px;height:36px;border-radius:8px;background:rgba(var(--color-principal-rgb,224,88,22),0.12);border:1px solid rgba(var(--color-principal-rgb,224,88,22),0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--color-principal);flex-shrink:0;text-transform:uppercase;}
+.empresa-info{display:flex;flex-direction:column;gap:2px;flex:1;}
+.empresa-name{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-main);}
+.empresa-meta{font-size:10px;color:var(--text-muted);}
+.empresa-warn{font-size:10px;font-weight:700;background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+.empresa-chevron{font-size:11px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
+.empresa-section.open .empresa-chevron{transform:rotate(180deg);}
+.empresa-body{display:none;}
+.empresa-section.open .empresa-body{display:block;}
+
+/* Person rows */
+.person-row{display:flex;align-items:center;gap:16px;padding:11px 16px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:background 0.12s;}
+.person-row:hover{background:var(--bg-hover);}
+.pr-avatar{width:34px;height:34px;border-radius:50%;background:var(--bg-dark3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--color-principal);flex-shrink:0;text-transform:uppercase;}
+.pr-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+.pr-name{font-size:13.5px;font-weight:700;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-username{font-size:11px;color:var(--text-muted);}
+.pr-count{font-size:10px;font-weight:700;background:var(--bg-dark3);color:var(--text-sub);border:1px solid var(--border2);border-radius:10px;padding:2px 10px;white-space:nowrap;flex-shrink:0;}
+.pr-warn{font-size:10px;font-weight:700;background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+.pr-chevron{font-size:11px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;}
+.person-row.open .pr-chevron{transform:rotate(180deg);}
+.person-eq-body{display:none;padding:0;background:var(--bg-body);border-bottom:1px solid var(--border);}
+
+/* Equipment table */
+.eq-wrap{margin:12px 16px 16px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.eq-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.eq-table thead tr{border-top:3px solid var(--color-principal);}
+.eq-table th{background:var(--bg-dark3);color:var(--text-sub);padding:10px 14px;text-align:left;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;white-space:nowrap;}
+.eq-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-main);vertical-align:middle;line-height:1.4;}
+.eq-table tbody tr:last-child td{border-bottom:none;}
+.eq-table tbody tr:nth-child(even) td{background:rgba(0,0,0,0.03);}
+.eq-table tbody tr:hover td{background:var(--bg-hover);}
+.badge{display:inline-block;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;}
+.badge-cat{background:rgba(0,100,200,0.07);color:#0066cc;border:1px solid rgba(0,100,200,0.18);}
+.badge-tipo{background:var(--bg-hover);color:var(--text-sub);border:1px solid var(--border2);}
+.badge-glpi{background:rgba(108,117,125,0.1);color:var(--text-sub);border:1px solid var(--border2);}
+.badge-sin-acta{background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);}
+.sn{font-family:monospace;font-size:11.5px;background:var(--bg-hover);padding:2px 7px;border-radius:4px;letter-spacing:0.3px;}
+.acta-link{color:var(--color-principal);font-size:11px;font-weight:700;text-decoration:none;}
+.acta-link:hover{text-decoration:underline;}
+.btn-devolver{padding:4px 12px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(0,123,255,0.08);color:#0056b3;border:1px solid rgba(0,123,255,0.3);transition:all 0.15s;}
+.btn-devolver:hover{background:rgba(0,123,255,0.15);}
+.btn-devolver.confirm{background:rgba(220,53,69,0.1);color:#dc3545;border-color:rgba(220,53,69,0.4);}
+
+/* Area cards */
+.area-card{background:var(--bg-card);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden;}
+.area-header{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;transition:background 0.12s;}
+.area-header:hover{background:var(--bg-hover);}
+.area-icon{width:36px;height:36px;border-radius:8px;background:var(--bg-dark3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.area-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+.area-name{font-size:13.5px;font-weight:700;color:var(--text-main);}
+.area-meta{font-size:11px;color:var(--text-muted);}
+.area-count{font-size:10px;font-weight:700;background:var(--bg-dark3);color:var(--text-sub);border:1px solid var(--border2);border-radius:10px;padding:2px 10px;white-space:nowrap;flex-shrink:0;}
+.area-body{display:none;padding:0;}
+.area-card.open .area-body{display:block;}
+.area-card.open .pr-chevron{transform:rotate(180deg);}
+
+.empty-tab{text-align:center;padding:40px;color:var(--text-muted);font-size:13px;}
+.loading{text-align:center;padding:60px;color:var(--text-muted);font-size:13px;}
+.btn-asignar{padding:4px 11px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;background:rgba(76,175,80,0.08);color:#388e3c;border:1px solid rgba(76,175,80,0.3);transition:all 0.15s;}
+.btn-asignar:hover{background:rgba(76,175,80,0.18);}
+.asignar-wrap{display:inline-flex;align-items:center;gap:6px;position:relative;}
+.asignar-input{padding:4px 8px;border-radius:5px;border:1.5px solid var(--color-principal);background:var(--bg-input);color:var(--text-main);font-size:11px;width:160px;outline:none;}
+.asignar-dropdown{position:absolute;top:100%;left:0;z-index:100;background:var(--bg-card);border:1px solid var(--border2);border-radius:6px;min-width:220px;max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.18);margin-top:2px;}
+.asignar-option{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border);}
+.asignar-option:last-child{border-bottom:none;}
+.asignar-option:hover{background:var(--bg-hover);}
+.asignar-option .opt-nombre{font-weight:700;color:var(--text-main);}
+.asignar-option .opt-user{font-size:10px;color:var(--text-muted);}
+.btn-asignar-ok{padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;background:var(--color-principal);color:#fff;border:none;}
+.btn-asignar-cancel{padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border2);}
+.grupo-section{border-bottom:1px solid var(--border);}
+.grupo-section:last-child{border-bottom:none;}
+.grupo-header{display:flex;align-items:center;gap:10px;padding:10px 16px 10px 0;cursor:pointer;user-select:none;background:var(--bg-hover);transition:background 0.12s;border-left:3px solid var(--color-principal);}
+.grupo-header:hover{background:var(--bg-dark3);}
+.grupo-header.sin-grupo{border-left-color:#e65100;background:rgba(230,81,0,0.04);}
+.grupo-nombre{font-size:12.5px;font-weight:700;color:var(--text-main);padding-left:14px;}
+.grupo-count{font-size:10px;font-weight:700;background:var(--bg-hover);color:var(--text-sub);border:1px solid var(--border2);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;margin-left:auto;}
+.grupo-warn{font-size:10px;font-weight:700;background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+.grupo-chevron{font-size:11px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;margin-right:14px;}
+.grupo-section.open .grupo-chevron{transform:rotate(180deg);}
+.grupo-body{display:none;}
+.grupo-section.open .grupo-body{display:block;}
+.glpi-badge{font-size:9px;font-weight:800;background:rgba(76,175,80,0.1);color:#388e3c;border:1px solid rgba(76,175,80,0.25);border-radius:8px;padding:1px 7px;}
+.empresa-header.local{background:rgba(76,175,80,0.04);}
+.dept-section{border-bottom:1px solid var(--border);}
+.dept-section:last-child{border-bottom:none;}
+.dept-header{display:flex;align-items:center;gap:12px;padding:10px 16px 10px 0;cursor:pointer;user-select:none;background:var(--bg-dark3);transition:background 0.12s;border-left:3px solid var(--color-principal);}
+.dept-header:hover{background:var(--bg-hover);}
+.dept-name{font-size:12.5px;font-weight:700;color:var(--text-main);padding-left:14px;}
+.dept-count{font-size:10px;font-weight:700;background:var(--bg-hover);color:var(--text-sub);border:1px solid var(--border2);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;margin-left:auto;}
+.dept-warn{font-size:10px;font-weight:700;background:rgba(255,152,0,0.12);color:#e65100;border:1px solid rgba(255,152,0,0.3);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+.dept-chevron{font-size:11px;color:var(--text-muted);transition:transform 0.2s;flex-shrink:0;margin-right:14px;}
+.dept-section.open .dept-chevron{transform:rotate(180deg);}
+.dept-body{display:none;}
+.dept-section.open .dept-body{display:block;}
+
+/* Mis Equipos */
+.mis-header{display:flex;align-items:center;gap:14px;padding:20px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.mis-avatar{width:48px;height:48px;border-radius:50%;background:rgba(var(--color-principal-rgb,224,88,22),0.1);border:2px solid rgba(var(--color-principal-rgb,224,88,22),0.25);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:var(--color-principal);flex-shrink:0;text-transform:uppercase;}
+.mis-user-info{flex:1;}
+.mis-name{font-size:15px;font-weight:800;color:var(--text-main);}
+.mis-username{font-size:12px;color:var(--text-muted);margin-top:2px;}
+.mis-count-badge{font-size:11px;font-weight:700;background:var(--bg-dark3);color:var(--text-sub);border:1px solid var(--border2);border-radius:12px;padding:5px 16px;white-space:nowrap;}
+.mis-eq-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+</style>
+<%- include('partials/branding') %>
+</head>
+<body>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
+    <div class="sub">Equipos</div>
+  </div>
+  <a href="/" class="btn-back">&larr; Menú</a>
+  <div class="user">
+    <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
+    <a href="/logout" class="btn-logout">Salir</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <% if (nivelInfo.nivel <= 2) { %>
+  <div class="outer-tabs">
+    <button class="outer-tab-btn active" id="otab-asignacion" onclick="setOuterTab('asignacion')">Asignados</button>
+    <button class="outer-tab-btn" id="otab-por-asignar" onclick="setOuterTab('por-asignar')">Por Asignar <span id="badge-por-asignar" style="display:none;background:rgba(230,81,0,0.15);color:#e65100;border:1px solid rgba(230,81,0,0.3);border-radius:10px;padding:1px 8px;font-size:10px;font-weight:800;margin-left:4px;"></span></button>
+    <button class="outer-tab-btn" id="otab-mis" onclick="setOuterTab('mis')">Mis Equipos</button>
+  </div>
+  <% } %>
+
+  <!-- Panel: Asignación de Equipos (N1/N2) -->
+  <% if (nivelInfo.nivel <= 2) { %>
+  <div class="outer-panel active" id="outer-asignacion">
+    <div id="loading-msg" class="loading">Cargando equipos desde GLPI...</div>
+    <div id="main-content" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="setTab('personas')">
+          Personas <span class="tab-badge" id="badge-personas">0</span>
+        </button>
+        <button class="tab-btn" onclick="setTab('areas')">
+          Áreas compartidas <span class="tab-badge" id="badge-areas">0</span>
+        </button>
+        <button class="tab-btn" onclick="setTab('sin')">
+          Sin asignación <span class="tab-badge" id="badge-sin">0</span>
+        </button>
+      </div>
+      <div class="tab-panel active" id="tab-personas">
+        <div class="filter-bar">
+          <input type="text" id="q-personas" placeholder="Buscar persona, usuario o equipo..." oninput="renderPersonas()">
+          <span class="filter-count" id="count-personas"></span>
+        </div>
+        <div id="list-personas"></div>
+      </div>
+      <div class="tab-panel" id="tab-areas">
+        <div class="filter-bar">
+          <input type="text" id="q-areas" placeholder="Buscar área o equipo..." oninput="renderAreas()">
+          <span class="filter-count" id="count-areas"></span>
+        </div>
+        <div id="list-areas"></div>
+      </div>
+      <div class="tab-panel" id="tab-sin">
+        <div class="filter-bar">
+          <input type="text" id="q-sin" placeholder="Buscar equipo..." oninput="renderSin()">
+          <span class="filter-count" id="count-sin"></span>
+        </div>
+        <div id="list-sin"></div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Panel: Por Asignar (N1/N2) -->
+  <% if (nivelInfo.nivel <= 2) { %>
+  <div class="outer-panel" id="outer-por-asignar">
+    <div id="pa-loading" class="loading">Cargando equipos pendientes...</div>
+    <div id="pa-content" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div class="section-title">Equipos sin acta de asignación</div>
+          <div style="font-size:12px;color:var(--text-muted);">Equipos registrados en GLPI desde <strong id="pa-fecha-corte"></strong> que aún no tienen acta activa.</div>
+        </div>
+        <div class="filter-bar" style="margin:0;">
+          <input type="text" id="q-pa" placeholder="Buscar equipo o S/N..." oninput="renderPorAsignar()" style="max-width:260px;">
+          <span class="filter-count" id="count-pa"></span>
+        </div>
+      </div>
+      <div id="list-pa"></div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- Panel: Mis Equipos (todos los niveles) -->
+  <div class="outer-panel <%= nivelInfo.nivel > 2 ? 'active' : '' %>" id="outer-mis">
+    <div id="mis-loading" class="loading">Cargando tus equipos...</div>
+    <div id="mis-content" style="display:none;">
+      <div class="mis-header">
+        <div class="mis-avatar" id="mis-avatar"></div>
+        <div class="mis-user-info">
+          <div class="mis-name" id="mis-nombre"></div>
+          <div class="mis-username" id="mis-username"></div>
+        </div>
+        <div class="mis-count-badge" id="mis-count">0 equipos</div>
+      </div>
+      <div id="mis-tabla"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const NIVEL = <%= nivelInfo.nivel %>;
+let DATA = { empresas: [], locales: [], areas: [], sin_asignacion: [] };
+let _pid = 0;
+let _misLoaded = false;
+let _paLoaded = false;
+let _paData = [];
+
+function setOuterTab(t) {
+  document.querySelectorAll('.outer-tab-btn').forEach(b => b.classList.toggle('active', b.id === 'otab-'+t));
+  document.querySelectorAll('.outer-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('outer-'+t).classList.add('active');
+  if (t === 'mis' && !_misLoaded) cargarMisEquipos();
+  if (t === 'por-asignar' && !_paLoaded) cargarPorAsignar();
+}
+
+function setTab(t){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['personas','areas','sin'][i]===t));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+}
+
+function empresaSigla(nombre) {
+  const n = (nombre||'').toUpperCase().replace(/\s+/g,'');
+  if(n.includes('DURACOLOR')) return 'DC';
+  if(n.includes('DURALUM')) return 'DUR';
+  if(n.includes('NAGSA')) return 'NG';
+  if(n.includes('PROALUM')) return 'PR';
+  if(n.includes('VETRIKO')) return 'VTK';
+  if(n.includes('WINDOWWORLD')||n.includes('WINDOW')) return 'WW';
+  return (nombre||'?')[0].toUpperCase();
+}
+
+function fmt(d){ if(!d) return '---'; return new Date(d).toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+function eqTableHtml(equipos, showAsignar=false){
+  const rows = equipos.length
+    ? equipos.map(eq=>{
+        const sn = eq.serie && eq.serie!=='---' ? `<span class="sn">${eq.serie}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+        const cat = eq.categoria ? `<span class="badge badge-cat">${eq.categoria}</span>` : '---';
+        const tipo = eq.tipo ? `<span class="badge badge-tipo">${eq.tipo}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+        const acta = eq.acta_numero
+          ? `<a class="acta-link" href="/reportes?id=${eq.acta_id}">${eq.acta_numero}</a><br><small style="color:var(--text-muted)">${fmt(eq.acta_fecha)}</small>`
+          : `<span class="badge badge-sin-acta">Sin acta</span>`;
+        const btnDevolver = (eq.acta_numero && eq.serie && eq.serie!=='---')
+          ? `<button class="btn-devolver" onclick="devolver(this,'${(eq.serie||'').replace(/'/g,"\\'")}')">Devuelto</button>`
+          : '';
+        const btnAsignar = showAsignar
+          ? `<button class="btn-asignar" onclick="mostrarAsignar(this,${eq.glpi_id},'${eq.glpi_tabla}')">Asignar</button>`
+          : btnDevolver;
+        return `<tr>
+          <td><strong>${eq.nombre||'---'}</strong>${eq.fabricante?`<br><small style="color:var(--text-muted)">${eq.fabricante}</small>`:''}</td>
+          <td>${sn}</td><td>${cat}</td><td>${tipo}</td>
+          <td><span class="badge badge-glpi">${eq.estado_glpi||'---'}</span></td>
+          <td>${acta}</td><td>${btnAsignar}</td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:14px">Sin equipos registrados</td></tr>`;
+  return `<div class="eq-wrap"><table class="eq-table">
+    <thead><tr><th>Equipo</th><th>S/N</th><th>Categoría</th><th>Tipo</th><th>Estado GLPI</th><th>Acta</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function eqTableMisHtml(equipos){
+  const rows = equipos.length
+    ? equipos.map(eq=>{
+        const sn = eq.serie && eq.serie!=='---' ? `<span class="sn">${eq.serie}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+        const cat = eq.categoria ? `<span class="badge badge-cat">${eq.categoria}</span>` : '---';
+        const tipo = eq.tipo ? `<span class="badge badge-tipo">${eq.tipo}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+        return `<tr>
+          <td><strong>${eq.nombre||'---'}</strong>${eq.fabricante?`<br><small style="color:var(--text-muted)">${eq.fabricante}</small>`:''}</td>
+          <td>${sn}</td><td>${cat}</td><td>${tipo}</td>
+          <td><span class="badge badge-glpi">${eq.estado_glpi||'---'}</span></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:30px">No tienes equipos asignados en GLPI.</td></tr>`;
+  return `<div class="mis-eq-wrap"><table class="eq-table">
+    <thead><tr><th>Equipo</th><th>S/N</th><th>Categoría</th><th>Tipo</th><th>Estado GLPI</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+function togglePerson(id){
+  const row = document.getElementById('pr-'+id);
+  const body = document.getElementById('prbody-'+id);
+  if(!row||!body) return;
+  const open = row.classList.toggle('open');
+  body.style.display = open ? 'block' : 'none';
+}
+function toggleEmpresa(idx){ const sec=document.getElementById('emp-'+idx); if(sec) sec.classList.toggle('open'); }
+function toggleArea(i){ const card=document.getElementById('acard-'+i); if(card) card.classList.toggle('open'); }
+
+function personaHtml(p, autoOpen){
+  const pid = _pid++;
+  const sinActa = p.equipos.filter(e=>!e.acta_numero).length;
+  const warn = sinActa ? `<span class="pr-warn">${sinActa} sin acta</span>` : '';
+  const inicial = (p.nombre||p.username||'?')[0];
+  return `<div class="person-row${autoOpen?' open':''}" id="pr-${pid}" onclick="togglePerson(${pid})">
+    <div class="pr-avatar">${inicial}</div>
+    <div class="pr-info"><span class="pr-name">${p.nombre||p.username}</span><span class="pr-username">${p.username||''}</span></div>
+    <span class="pr-count">${p.equipos.length} equipo${p.equipos.length!==1?'s':''}</span>
+    ${warn}<span class="pr-chevron">&#9660;</span>
+  </div>
+  <div class="person-eq-body" id="prbody-${pid}" style="${autoOpen?'display:block':''}"> ${eqTableHtml(p.equipos)}</div>`;
+}
+
+function renderPersonas(){
+  _pid = 0;
+  const q = (document.getElementById('q-personas').value||'').toLowerCase();
+  let totalPersonas = 0;
+  const html = [];
+
+  DATA.empresas.forEach((emp, empIdx)=>{
+    const filtrarPersona = p => !q || (p.nombre+' '+p.username+' '+p.equipos.map(e=>e.nombre+' '+(e.serie||'')).join(' ')).toLowerCase().includes(q);
+
+    const sinGrupoFilt = (emp.sin_grupo||[]).filter(filtrarPersona);
+    const gruposFilt = (emp.grupos||[]).map(g=>({ ...g, personas: g.personas.filter(filtrarPersona) })).filter(g=>g.personas.length);
+
+    const totalEmp = gruposFilt.reduce((s,g)=>s+g.personas.length,0) + sinGrupoFilt.length;
+    if(!totalEmp) return;
+    totalPersonas += totalEmp;
+
+    const sinActaGrupos = gruposFilt.reduce((s,g)=>s+g.personas.reduce((s2,p)=>s2+p.equipos.filter(e=>!e.acta_numero).length,0),0);
+    const sinActaSG = sinGrupoFilt.reduce((s,p)=>s+p.equipos.filter(e=>!e.acta_numero).length,0);
+    const sinActaEmp = sinActaGrupos + sinActaSG;
+    const warnBadge = sinActaEmp ? `<span class="empresa-warn">${sinActaEmp} sin acta</span>` : '';
+
+    // Grupos
+    let innerHtml = '';
+    gruposFilt.forEach((g, gi)=>{
+      const sinActaGrupo = g.personas.reduce((s,p)=>s+p.equipos.filter(e=>!e.acta_numero).length,0);
+      const warnGrupo = sinActaGrupo ? `<span class="grupo-warn">${sinActaGrupo} sin acta</span>` : '';
+      const gId = `gp-${empIdx}-${gi}`;
+      innerHtml += `<div class="grupo-section${q?' open':''}" id="${gId}">
+        <div class="grupo-header" onclick="document.getElementById('${gId}').classList.toggle('open')">
+          <span class="grupo-nombre">&#128101; ${g.nombre}</span>
+          <span class="grupo-count">${g.personas.length} persona${g.personas.length!==1?'s':''}</span>
+          ${warnGrupo}<span class="grupo-chevron">&#9660;</span>
+        </div>
+        <div class="grupo-body">${g.personas.map(p=>personaHtml(p,!!q)).join('')}</div>
+      </div>`;
+    });
+
+    // Usuarios con equipo en GLPI pero sin grupo configurado en Permisos
+    if (sinGrupoFilt.length) {
+      const sgId = `sg-${empIdx}`;
+      const warnSG = sinActaSG ? `<span class="grupo-warn">${sinActaSG} sin acta</span>` : '';
+      innerHtml += `<div class="grupo-section${q?' open':''}" id="${sgId}">
+        <div class="grupo-header sin-grupo" onclick="document.getElementById('${sgId}').classList.toggle('open')">
+          <span class="grupo-nombre">&#9888; Sin grupo</span>
+          <span class="grupo-count">${sinGrupoFilt.length} persona${sinGrupoFilt.length!==1?'s':''}</span>
+          ${warnSG}<span class="grupo-chevron">&#9660;</span>
+        </div>
+        <div class="grupo-body">${sinGrupoFilt.map(p=>personaHtml(p,!!q)).join('')}</div>
+      </div>`;
+    }
+
+    const totalGrupos = gruposFilt.length + (sinGrupoFilt.length ? 1 : 0);
+    html.push(`<div class="empresa-section${q?' open':''}" id="emp-${empIdx}">
+      <div class="empresa-header" onclick="toggleEmpresa(${empIdx})">
+        <div class="empresa-icon" style="font-size:${empresaSigla(emp.nombre).length>2?'9px':'11px'}">${empresaSigla(emp.nombre)}</div>
+        <div class="empresa-info">
+          <span class="empresa-name">${emp.nombre}</span>
+          <span class="empresa-meta">${totalGrupos} grupo${totalGrupos!==1?'s':''} &middot; ${totalEmp} persona${totalEmp!==1?'s':''}</span>
+        </div>
+        ${warnBadge}<span class="empresa-chevron">&#9660;</span>
+      </div>
+      <div class="empresa-body">${innerHtml}</div>
+    </div>`);
+  });
+
+  document.getElementById('count-personas').textContent = totalPersonas+' persona'+(totalPersonas!==1?'s':'');
+  const container = document.getElementById('list-personas');
+  container.innerHTML = html.length ? html.join('') : '<div class="empty-tab">No se encontraron resultados.</div>';
+}
+
+function renderAreas(){
+  const q = (document.getElementById('q-areas').value||'').toLowerCase();
+  const filtered = DATA.areas.filter(a=>{
+    if(!q) return true;
+    return (a.nombre+' '+a.equipos.map(e=>e.nombre+' '+(e.serie||'')).join(' ')).toLowerCase().includes(q);
+  });
+  document.getElementById('count-areas').textContent = filtered.length+' área'+(filtered.length!==1?'s':'');
+  const container = document.getElementById('list-areas');
+  if(!filtered.length){ container.innerHTML='<div class="empty-tab">No hay equipos en áreas compartidas.</div>'; return; }
+  container.innerHTML = filtered.map((a,i)=>`
+    <div class="area-card${q?' open':''}" id="acard-${i}">
+      <div class="area-header" onclick="toggleArea(${i})">
+        <div class="area-icon">&#128205;</div>
+        <div class="area-info"><span class="area-name">${a.nombre}</span><span class="area-meta">Área compartida</span></div>
+        <span class="area-count">${a.equipos.length} equipo${a.equipos.length!==1?'s':''}</span>
+        <span class="pr-chevron">&#9660;</span>
+      </div>
+      <div class="area-body">${eqTableHtml(a.equipos, true)}</div>
+    </div>`).join('');
+}
+
+function renderSin(){
+  const q = (document.getElementById('q-sin').value||'').toLowerCase();
+  const filtered = DATA.sin_asignacion.filter(e=>{
+    if(!q) return true;
+    return (e.nombre+' '+(e.serie||'')+' '+(e.fabricante||'')+' '+(e.tipo||'')+' '+(e.categoria||'')).toLowerCase().includes(q);
+  });
+  document.getElementById('count-sin').textContent = filtered.length+' equipo'+(filtered.length!==1?'s':'');
+  const container = document.getElementById('list-sin');
+  if(!filtered.length){ container.innerHTML='<div class="empty-tab">No hay equipos sin asignación.</div>'; return; }
+  container.innerHTML = eqTableHtml(filtered, true);
+}
+
+async function devolver(btn, serie){
+  if(btn.dataset.confirming){
+    btn.disabled = true;
+    try{
+      const res = await fetch('/equipos/api/devolver',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({serie})});
+      const d = await res.json();
+      if(d.ok){ toast('Marcado como devuelto','success'); cargarLista(); }
+      else{ toast(d.error||'Error al devolver','error'); btn.disabled=false; delete btn.dataset.confirming; btn.textContent='Devuelto'; btn.classList.remove('confirm'); }
+    }catch(e){ toast('Error al devolver','error'); btn.disabled=false; delete btn.dataset.confirming; btn.textContent='Devuelto'; btn.classList.remove('confirm'); }
+    return;
+  }
+  btn.dataset.confirming='1'; btn.textContent='¿Seguro?'; btn.classList.add('confirm');
+  setTimeout(()=>{ if(btn.dataset.confirming){ delete btn.dataset.confirming; btn.textContent='Devuelto'; btn.classList.remove('confirm'); } },3000);
+}
+
+let _buscarTimer = null;
+function mostrarAsignar(btn, glpiId, glpiTabla){
+  const td = btn.closest('td');
+  td.innerHTML = `<div class="asignar-wrap" id="aw-${glpiId}">
+    <input class="asignar-input" id="ai-${glpiId}" type="text" placeholder="Buscar usuario..." oninput="buscarUsuario(${glpiId},'${glpiTabla}',this.value)" autocomplete="off">
+    <div class="asignar-dropdown" id="ad-${glpiId}" style="display:none;"></div>
+    <button class="btn-asignar-cancel" onclick="cargarLista()">&#10005;</button>
+  </div>`;
+  document.getElementById('ai-'+glpiId).focus();
+}
+function buscarUsuario(glpiId, glpiTabla, q){
+  clearTimeout(_buscarTimer);
+  const dd = document.getElementById('ad-'+glpiId);
+  if(!dd) return;
+  if(q.length < 2){ dd.style.display='none'; return; }
+  _buscarTimer = setTimeout(async()=>{
+    try{
+      const res = await fetch('/equipos/api/buscar-usuario?q='+encodeURIComponent(q));
+      const lista = await res.json();
+      if(!lista.length){ dd.innerHTML='<div class="asignar-option" style="color:var(--text-muted)">Sin resultados</div>'; dd.style.display='block'; return; }
+      dd.innerHTML = lista.map(u=>`<div class="asignar-option" onclick="confirmarAsignar(${glpiId},'${glpiTabla}',${u.id},'${(u.nombre||'').replace(/'/g,"\\'")}','${(u.username||'').replace(/'/g,"\\'")}')">
+        <div class="opt-nombre">${u.nombre||u.username}</div><div class="opt-user">${u.username}</div>
+      </div>`).join('');
+      dd.style.display='block';
+    }catch(e){ console.error(e); }
+  },280);
+}
+function confirmarAsignar(glpiId, glpiTabla, usersId, nombre, username){
+  const wrap = document.getElementById('aw-'+glpiId);
+  if(!wrap) return;
+  wrap.innerHTML = `<span style="font-size:12px;color:var(--text-main)">Asignar a <strong>${nombre||username}</strong>?</span>
+    <button class="btn-asignar-ok" onclick="ejecutarAsignar(${glpiId},'${glpiTabla}',${usersId})">Confirmar</button>
+    <button class="btn-asignar-cancel" onclick="cargarLista()">Cancelar</button>`;
+}
+async function ejecutarAsignar(glpiId, glpiTabla, usersId){
+  try{
+    const res = await fetch('/equipos/api/asignar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({glpi_tabla:glpiTabla,glpi_id:glpiId,users_id:usersId})});
+    const d = await res.json();
+    if(d.ok){ toast('Equipo asignado correctamente','success'); cargarLista(); }
+    else toast(d.error||'Error al asignar','error');
+  }catch(e){ toast('Error al asignar','error'); }
+}
+
+async function cargarLista(){
+  _pid = 0;
+  document.getElementById('loading-msg').style.display = 'block';
+  document.getElementById('main-content').style.display = 'none';
+  try{
+    const res = await fetch('/equipos/api/listar');
+    DATA = await res.json();
+    if(DATA.error){ toast('Error: '+DATA.error,'error'); document.getElementById('loading-msg').style.display='none'; return; }
+    const totalPersonas = (DATA.empresas||[]).reduce((s,e)=>s+(e.sin_grupo||[]).length+(e.grupos||[]).reduce((s2,g)=>s2+g.personas.length,0),0);
+    document.getElementById('badge-personas').textContent = totalPersonas;
+    document.getElementById('badge-areas').textContent = (DATA.areas||[]).length;
+    document.getElementById('badge-sin').textContent = (DATA.sin_asignacion||[]).length;
+    renderPersonas(); renderAreas(); renderSin();
+    document.getElementById('main-content').style.display = 'block';
+  }catch(e){ toast('Error al cargar equipos','error'); console.error(e); }
+  document.getElementById('loading-msg').style.display = 'none';
+}
+
+async function cargarMisEquipos(){
+  _misLoaded = true;
+  document.getElementById('mis-loading').style.display = 'block';
+  document.getElementById('mis-content').style.display = 'none';
+  try{
+    const res = await fetch('/equipos/api/mis-equipos');
+    const d = await res.json();
+    if(d.error){ toast('Error: '+d.error,'error'); document.getElementById('mis-loading').style.display='none'; return; }
+
+    const nombre = '<%= (session.nagsa_name || session.nagsa_user || "").replace(/'/g, "\\'") %>';
+    const username = '<%= (session.nagsa_user || "").replace(/'/g, "\\'") %>';
+    document.getElementById('mis-avatar').textContent = (nombre||username||'?')[0].toUpperCase();
+    document.getElementById('mis-nombre').textContent = nombre || username;
+    document.getElementById('mis-username').textContent = username;
+    document.getElementById('mis-count').textContent = d.equipos.length+' equipo'+(d.equipos.length!==1?'s':'');
+    document.getElementById('mis-tabla').innerHTML = eqTableMisHtml(d.equipos);
+
+    document.getElementById('mis-content').style.display = 'block';
+  }catch(e){ toast('Error al cargar equipos','error'); console.error(e); }
+  document.getElementById('mis-loading').style.display = 'none';
+}
+
+function fmt2(d){ if(!d) return '---'; return new Date(d).toLocaleDateString('es-EC',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+
+function renderPorAsignar(){
+  const q = (document.getElementById('q-pa').value||'').toLowerCase();
+  const filtered = _paData.filter(e=>{
+    if(!q) return true;
+    return (e.nombre+' '+(e.serie||'')+' '+(e.categoria||'')+' '+(e.asignado_nombre||'')+' '+(e.fabricante||'')).toLowerCase().includes(q);
+  });
+  document.getElementById('count-pa').textContent = filtered.length+' equipo'+(filtered.length!==1?'s':'');
+  const container = document.getElementById('list-pa');
+  if(!filtered.length){ container.innerHTML='<div class="empty-tab">No hay equipos pendientes de acta.</div>'; return; }
+  const rows = filtered.map(e=>{
+    const sn = e.serie && e.serie!=='---' ? `<span class="sn">${e.serie}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+    const cat = e.categoria ? `<span class="badge badge-cat">${e.categoria}</span>` : '---';
+    const tipo = e.tipo ? `<span class="badge badge-tipo">${e.tipo}</span>` : `<span style="color:var(--text-muted)">---</span>`;
+    const asig = e.asignado_nombre
+      ? `<span style="font-size:12px;font-weight:700;color:var(--text-main);">${e.asignado_nombre}</span><br><small style="color:var(--text-muted)">${e.asignado_user||''}</small>`
+      : `<span style="color:var(--text-muted);font-size:12px;">Sin asignar</span>`;
+    const btnActa = e.serie && e.serie!=='---'
+      ? `<a href="/actas?serie=${encodeURIComponent(e.serie)}" class="btn-devolver" style="text-decoration:none;">Crear Acta</a>`
+      : `<span style="font-size:11px;color:var(--text-muted);">Sin S/N</span>`;
+    return `<tr>
+      <td><strong>${e.nombre||'---'}</strong>${e.fabricante?`<br><small style="color:var(--text-muted)">${e.fabricante}</small>`:''}</td>
+      <td>${sn}</td><td>${cat}</td><td>${tipo}</td>
+      <td><span class="badge badge-glpi">${e.estado_glpi||'---'}</span></td>
+      <td>${asig}</td>
+      <td style="color:var(--text-muted);font-size:12px;">${fmt2(e.fecha_glpi)}</td>
+      <td>${btnActa}</td>
+    </tr>`;
+  }).join('');
+  container.innerHTML = `<div class="eq-wrap"><table class="eq-table">
+    <thead><tr><th>Equipo</th><th>S/N</th><th>Categoría</th><th>Tipo</th><th>Estado GLPI</th><th>Asignado a</th><th>Registro GLPI</th><th></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+}
+
+async function cargarPorAsignar(){
+  _paLoaded = true;
+  document.getElementById('pa-loading').style.display = 'block';
+  document.getElementById('pa-content').style.display = 'none';
+  try{
+    const res = await fetch('/equipos/api/por-asignar');
+    const d = await res.json();
+    if(d.error){ toast('Error: '+d.error,'error'); document.getElementById('pa-loading').style.display='none'; return; }
+    _paData = d.equipos || [];
+    const fechaEl = document.getElementById('pa-fecha-corte');
+    if(fechaEl) fechaEl.textContent = d.fecha_corte || '';
+    const badge = document.getElementById('badge-por-asignar');
+    if(badge && _paData.length){ badge.textContent = _paData.length; badge.style.display=''; }
+    renderPorAsignar();
+    document.getElementById('pa-content').style.display = 'block';
+  }catch(e){ toast('Error al cargar equipos pendientes','error'); console.error(e); }
+  document.getElementById('pa-loading').style.display = 'none';
+}
+
+if (NIVEL <= 2) {
+  cargarLista();
+} else {
+  cargarMisEquipos();
+}
+</script>
+</body>
+</html>

@@ -267,7 +267,7 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
     <form method="POST" action="/admin/save-modulos" class="card">
       <div class="ch"><div class="ci" style="background:#E8F5E9;">&#128268;</div><div><div class="ct">Estado de Módulos</div><div class="cd">Activar o desactivar módulos del sistema</div></div></div>
       <div class="cb">
-        <% const mods = cfg.modulos || {}; const modLabels = { etiquetas: '\u{1F3F7}\u{FE0F} Etiquetas', actas: '\u{1F4CB} Actas', reportes: '\u{1F4CA} Reportes', inversiones: '\u{1F4B0} Inversiones', permisos: '\u{1F514} Permisos y Notif.' }; %>
+        <% const mods = cfg.modulos || {}; const modLabels = { etiquetas: '\u{1F3F7}\u{FE0F} Etiquetas de Activos', actas: '\u{1F4CB} Actas de Equipos', reportes: '\u{1F4CB} Seguimiento de Actas', equipos_asignados: '\u{1F4BC} Equipos', inversiones: '\u{1F6D2} Solicitudes de Compra', permisos: '\u{1F510} Permisos del Sistema' }; %>
         <% for (const [key, label] of Object.entries(modLabels)) { const estado = mods[key] || 'deshabilitado'; %>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
           <span style="font-size:13px;color:var(--text-main);"><%= label %></span>

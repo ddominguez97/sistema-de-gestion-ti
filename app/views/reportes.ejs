@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reportes &mdash; <%= branding.nombre %></title>
+<title>Seguimiento de Actas &mdash; <%= branding.nombre %></title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-main);min-height:100vh;}
@@ -103,11 +103,12 @@ body{font-family:Arial,sans-serif;background:var(--bg-body);color:var(--text-mai
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px;">
     <a href="/"><img src="<%= branding.logo %>" alt="<%= branding.nombre %>" style="height:36px;object-fit:contain;"></a>
-    <div class="sub">Reportes y Estadísticas</div>
+    <div class="sub">Seguimiento de Actas</div>
   </div>
   <a href="/" class="btn-back">&larr; Menú</a>
   <div class="user">
     <span><%= session.nagsa_name || session.nagsa_user %></span>
+    <button onclick="toggleTema()" title="Cambiar tema" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--text-sub);line-height:1;"><%- branding.tema === 'oscuro' ? '&#x1F319;' : '&#x2600;&#xFE0F;' %></button>
     <a href="/logout" class="btn-logout">Salir</a>
   </div>
 </div>

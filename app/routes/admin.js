@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { loadConfig, saveConfig, ROOT_PATH } = require('../config/config');
-const { getGLPILdapConfig, getNivelUsuario } = require('../middleware/auth');
+const { getGLPILdapConfig, resolveADConfig, getNivelUsuario } = require('../middleware/auth');
 
 function getAdminPass() {
   const cfg = loadConfig();
@@ -188,7 +188,7 @@ router.post('/save-modulos', (req, res) => {
   const cfg = loadConfig();
   const valid = ['activo','pruebas','deshabilitado'];
   cfg.modulos = cfg.modulos || {};
-  for (const mod of ['etiquetas','actas','reportes','inversiones','permisos']) {
+  for (const mod of ['etiquetas','actas','reportes','equipos_asignados','inversiones','permisos']) {
     const val = req.body['mod_' + mod] || 'deshabilitado';
     cfg.modulos[mod] = valid.includes(val) ? val : 'deshabilitado';
   }
@@ -331,6 +331,66 @@ router.get('/debug-ldap', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// GET /admin/test-ldap — prueba real de conexión y bind AD
+router.get('/test-ldap', async (req, res) => {
+  if (!req.session.admin_ok && !req.session.nagsa_user) return res.status(403).json({ error: 'No autorizado' });
+  const { nivel } = getNivelUsuario(loadConfig(), req);
+  if (!req.session.admin_ok && nivel > 2) return res.status(403).json({ error: 'No autorizado' });
+  const { loadConfig } = require('../config/config');
+  const cfg = loadConfig();
+  let adCfg;
+  try {
+    adCfg = await resolveADConfig(cfg.active_directory || {});
+  } catch (e) {
+    return res.json({ ok: false, paso: 'resolver_config', error: e.message });
+  }
+  if (!adCfg) return res.json({ ok: false, paso: 'resolver_config', error: 'No hay config AD disponible' });
+
+  const info = {
+    servidor: adCfg.servidor,
+    puerto: adCfg.puerto,
+    base_dn: adCfg.base_dn,
+    bind_dn: adCfg.bind_dn,
+    login_field: adCfg.login_field,
+    tiene_password: !!adCfg.bind_password,
+  };
+
+  const ldap = require('ldapjs');
+  const protocol = adCfg.use_tls ? 'ldaps' : 'ldap';
+  await new Promise((resolve) => {
+    const client = ldap.createClient({ url: `${protocol}://${adCfg.servidor}:${parseInt(adCfg.puerto)||389}`, connectTimeout: 6000 });
+    client.on('error', (e) => { info.bind = 'error_conexion'; info.bind_error = e.message; resolve(); });
+    client.bind(adCfg.bind_dn, adCfg.bind_password, (err) => {
+      if (err) { info.bind = 'fallido'; info.bind_error = err.message; client.destroy(); return resolve(); }
+      info.bind = 'ok';
+      // Buscar 3 usuarios de prueba
+      const loginField = adCfg.login_field || 'sAMAccountName';
+      client.search(adCfg.base_dn || '', {
+        filter: `(&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))`,
+        attributes: [loginField, 'distinguishedName'],
+        scope: 'sub', sizeLimit: 3,
+      }, (searchErr, searchRes) => {
+        if (searchErr) { info.search = 'error'; info.search_error = searchErr.message; client.destroy(); return resolve(); }
+        const muestras = [];
+        searchRes.on('searchEntry', (entry) => {
+          const attrs = (entry.pojo && entry.pojo.attributes) ? entry.pojo.attributes : [];
+          let username = '', dn = entry.dn?.toString() || '';
+          for (const a of attrs) {
+            if (a.type.toLowerCase() === loginField.toLowerCase()) username = a.values && a.values[0] ? a.values[0] : '';
+            if (a.type === 'distinguishedName' && a.values && a.values[0]) dn = a.values[0];
+          }
+          const ous = (dn.match(/OU=([^,]+)/gi) || []).map(o => o.replace(/ou=/i, ''));
+          muestras.push({ username, dn, empresa_detectada: ous.length ? ous[ous.length-1] : '(sin OU)' });
+        });
+        searchRes.on('end', () => { info.search = 'ok'; info.muestras = muestras; client.destroy(); resolve(); });
+        searchRes.on('error', (e) => { info.search = 'error'; info.search_error = e.message; client.destroy(); resolve(); });
+      });
+    });
+  });
+
+  res.json({ ok: info.bind === 'ok', config: info });
 });
 
 module.exports = router;
