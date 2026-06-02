@@ -3,3 +3,4 @@ start.bat
 node_modules/
 stitch/.env
 .env
+.claude/
